@@ -1,10 +1,11 @@
 {
   "name": "teaddon-zgacrypto",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "scripts": {
-    "dev": "google-closure-compiler --charset UTF-8 --compilation_level ADVANCED_OPTIMIZATIONS --warning_level VERBOSE --language_out STABLE --externs extern/forge.js --externs extern/win.js --externs extern/te.js --js src/base.js --js src/binutil.js --js src/crypto.js --js src/test.js --js_output_file dist/script-dev.js --formatting PRETTY_PRINT",
-    "build": "google-closure-compiler --charset UTF-8 --compilation_level ADVANCED_OPTIMIZATIONS --warning_level VERBOSE --language_out STABLE --externs extern/forge.js --externs extern/win.js --externs extern/te.js --js src/base.js --js src/binutil.js --js src/crypto.js --js_output_file dist/script.js"
+    "check": "./build.sh check",
+    "dev": "./build.sh dev",
+    "build": "./build.sh"
   },
   "devDependencies": {
     "google-closure-compiler": "^20231112.0.0"

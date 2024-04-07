@@ -1,7 +1,4 @@
-/**
- * @param {string} bpath
- */
-window.test = function(bpath){
+window.test = function(){
 	/**
 	 * @param {FolderItem} fil
 	 * @return {string}
@@ -58,7 +55,7 @@ window.test = function(bpath){
 		};
 
 		/** @type {string} */
-		var wkf = bpath + "test";
+		var wkf = fso.BuildPath(fso.GetParentFolderName(ZgaCrypto.SRCDIR), "test");
 		ZgaCrypto.initCryptoEnv(fso.BuildPath(wkf, "forge.min.js"));
 		//Test for write binary.
 		Object.keys(testsdat).forEach(function(key){
@@ -76,8 +73,8 @@ window.test = function(bpath){
 
 		alert("Test read and write OK.");
 
-		/** @type {Date} */
-		var stdt = new Date();
+		/** @type {ZgaCrypto.ProgessBar} */
+		var pbar = new ZgaCrypto.ProgessBar();
 		/** @type {FolderItem} */
 		var fim = wkfdr.ParseName("bigdata.zip");
 		/** @type {ZgaCrypto.BinReader} */
@@ -85,7 +82,6 @@ window.test = function(bpath){
 		/** @type {ZgaCrypto.BinWriter} */
 		var wtr = new ZgaCrypto.BinWriter(fim.Path + ".enc");
 
-		
 		/** @type {CryptoSecrets} */
 		var scs = ZgaCrypto.deriveSecrets("abcd", "1234");
 		/** @type {forge.util.ByteBuffer} */
@@ -103,6 +99,8 @@ window.test = function(bpath){
 				/** @type {forge.util.ByteBuffer} */
 				var wdat = new forge.util.ByteBuffer(a_u8);
 				cryptor.update(wdat);
+			}else if(!cryptor){
+				return;
 			}
 			if(a_final){
 				cryptor.finish();
@@ -114,40 +112,46 @@ window.test = function(bpath){
 			wtr.write(ret3);
 		};
 
-		/** @type {Uint8Array} */
-		var u8 = rdr.read(500000);
-		while(!rdr.isEnd()){
-			consume(u8);
-			u8 = rdr.read(500000);
-		}
-		consume(u8, true);
-		rdr.close();
-		wtr.close();
+		/** @type {number} */
+		var hdstep = 0;
+		/** @type {number} */
+		var pos = 0;
+		pbar.open(function(){
+			pbar.setHdPosition(hdstep, "Encrypting " + fim.Name);
+			pbar.setSize(fim.Size);
+		}, function(){
+			if(hdstep == 0 || hdstep == 1){
+				/** @type {Uint8Array} */
+				var u8 = rdr.read(500000);
+				consume(u8, rdr.isEnd());
+				pos += 500000;
+				pbar.setPosition(pos);
+				if(rdr.isEnd()){
+					rdr.close();
+					wtr.close();
+					if(hdstep == 0){
+						fim = wkfdr.ParseName("bigdata.zip.enc");
+						rdr = new ZgaCrypto.BinReader(fim);
+						wtr = new ZgaCrypto.BinWriter(fim.Path + ".dec");
 
-		/** @type {Date} */
-		var eddt = new Date();
-		prompt("Test Encryption.", "".concat(eddt - stdt));
+						key2 = new forge.util.ByteBuffer(scs._key);
+						cryptor = forge.cipher.createDecipher("AES-CBC", key2);
+						cryptor.start({iv: scs._iv});
 
-		stdt = new Date();
-		fim = wkfdr.ParseName("bigdata.zip.enc");
-		rdr = new ZgaCrypto.BinReader(fim);
-		wtr = new ZgaCrypto.BinWriter(fim.Path + ".dec");
-
-		key2 = new forge.util.ByteBuffer(scs._key);
-		cryptor = forge.cipher.createDecipher("AES-CBC", key2);
-		cryptor.start({iv: scs._iv});
-
-		u8 = rdr.read(500000);
-		while(!rdr.isEnd()){
-			consume(u8);
-			u8 = rdr.read(500000);
-		}
-		consume(u8, true);
-		rdr.close();
-		wtr.close();
-
-		eddt = new Date();
-		prompt("Test Decryption.", "".concat(eddt - stdt));
+						hdstep = 1;
+						pbar.setHdPosition(hdstep, "Decrypting " + fim.Name);
+						pbar.setSize(fim.Size);
+						pos = 0;
+						pbar.setPosition(pos);
+					}else{
+						hdstep = 2;
+						pbar.setHdPosition(hdstep, "Done.");
+					}
+				}
+			}else{
+				pbar.done();
+			}
+		}, 2);
 
 	}catch(ex){
 		alert(ex.stack);
@@ -155,7 +159,14 @@ window.test = function(bpath){
 }
 
 /* Run the codes below in TE's JScript.
-var bp = "Path of the project.";
-Addons.ZBUtils.runJsFile(bp + "dist\\script-dev.js");
-test(bp);
+window.zgacpath = "Path of the project." + "\\dist";
+//load js
+var jspath = fso.BuildPath(window.zgacpath, "script-dev.js");
+var ado = OpenAdodbFromTextFile(jspath);
+var s = ado.ReadText();
+ado.Close();
+var sc = new Function(s);
+sc();
+//run test
+test();
 */

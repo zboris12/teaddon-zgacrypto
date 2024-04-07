@@ -49,6 +49,11 @@ FileSystemObject.prototype.OpenTextFile = function(filename, iomode, create, for
  * @return {string}
  */
 FileSystemObject.prototype.BuildPath = function(path, name){};
+/**
+ * @param {string} path
+ * @return {string}
+ */
+FileSystemObject.prototype.GetParentFolderName = function(path){};
 
 
 /** @constructor */
@@ -88,6 +93,8 @@ var FolderItem = function(){};
 FolderItem.prototype.Parent;
 /** @type {string} */
 FolderItem.prototype.Path;
+/** @type {string} */
+FolderItem.prototype.Name;
 /** @type {number} */
 FolderItem.prototype.Size;
 

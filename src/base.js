@@ -93,6 +93,9 @@ var ExecReturn;
 
 const ZgaCrypto = {};
 
+/** @type {string} */
+ZgaCrypto.SRCDIR = window.zgacpath || fso.BuildPath(te.Data.Installed, "addons\\zgacrypto");
+
 /**
  * @param {string} cmd
  * @return {?ExecReturn}

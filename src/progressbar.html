@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="MSThemeCompatible" content="Yes">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>ZgaCrypto</title>
+    <link rel="stylesheet" type="text/css" href="../../script/index.css">
+    <style type="text/css">
+    .panel {
+      margin: 10px;
+      width: 100%;
+      border: 0px;
+    }
+    .label {
+      padding-left: 5px;
+      padding-top: 10px;
+      white-space: nowrap;
+    }
+    .trprgs {
+      padding-left: 5px;
+      line-height: 1.5em;
+      vertical-align: middle;
+    }
+    .tdprgs {
+      border: 1px solid #898C95;
+      width: auto;
+    }
+    .tdper {
+      padding-left: 5px;
+      width: 70px;
+    }
+    .progress {
+      width: 0px;
+      height: 1.5em;
+      background-color: blue;
+      display: block;
+    }
+    .footer {
+      width: 100%;
+      line-height: 1.5em;
+    }
+    .buttons {
+      padding-right: 20px;
+    }
+    </style>
+    <script language="javascript">
+    function SetResult(val){
+      document.getElementById("Result").value = val.toString();
+    }
+    </script>
+  </head>
+  <body>
+    <table class="panel"><tbody>
+    <tr id="trHeader" style="display:none;">
+      <td id="tdHeader" class="label" colspan="2">Loading...</td>
+    </tr>
+    <tr id="trHdPrgs" class="trprgs" style="display:none;">
+      <td class="tdprgs"><div id="divHdPrgs" class="progress"></div></td>
+      <td id="tdHdCnt" class="tdper">0%</td>
+    </tr>
+    <tr id="trMain" style="display:none;">
+      <td id="tdMain" class="label" colspan="2">Loading...</td>
+    </tr>
+    <tr id="trPrgs" class="trprgs" style="display:none;">
+      <td id="tdprgs" class="tdprgs"><div id="divPrgs" class="progress" /></td>
+      <td id="tdCount" class="tdper">0%</td>
+    </tr>
+    </tbody></table>
+    <input id="Result" type="hidden" value="0" />
+    <!--panel_end-->
+    <table id="buttons" class="footer">
+      <tr>
+        <td id="Selected" style="text-align: right; width: 100%; white-space: nowrap"></td>
+        <td class="buttons">
+          <input id="btnCancel" type="button" value="Cancel" class="cancel" onclick="returnValue=null;SetResult(1);" />
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

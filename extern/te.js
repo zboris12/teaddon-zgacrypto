@@ -9,6 +9,11 @@ var adSaveCreateOverWrite;
 /** @const {number} */
 var adTypeBinary;
 
+var te = {};
+te.Data = {};
+/** @type {string} */
+te.Data.Installed;
+
 var api = {};
 /**
  * @param {number} desired
@@ -39,16 +44,38 @@ var wsh;
 var fso;
 /** @type {WinShell} */
 var sha;
+/** @type {Window} */
+var MainWindow;
+
+/** @constructor */
+var TablacusControl = function(){};
+/** @type {Window} */
+TablacusControl.prototype.Window;
+/**
+ * @typedef
+ * {{
+ *    MainWindow: Window,
+ *    Modal: boolean,
+ *    width: number,
+ *    height: number,
+ * }}
+ */
+var DialogOptions;
 
 /**
- * @param {Object=} Ctrl
+ * @param {TablacusControl=} Ctrl
  * @param {Object=} pt
  * @return {FolderView}
  */
 var GetFolderView = function(Ctrl, pt){};
-
 /**
  * @param {string} fil
  * @return {ADOStream}
  */
 var OpenAdodbFromTextFile = function(fil){};
+/**
+ * @param {string} fn
+ * @param {DialogOptions} opt
+ * @return {TablacusControl}
+ */
+var ShowDialog = function(fn, opt){};
