@@ -163,9 +163,9 @@ window.test = function(){
 		/** @type {string} */
 		var ostr = "あいうえお"+String.fromCharCode(0)+String.fromCharCode(1);
 		/** @type {Uint8Array} */
-		var u8enc = ZgaCrypto.EncryptLocal(ostr, "abcd");
+		var u8enc = ZgaCrypto.encryptLocal(ostr, "abcd");
 		/** @type {string} */
-		var dstr = ZgaCrypto.DecryptLocal(u8enc, "abcd");
+		var dstr = ZgaCrypto.decryptLocal(u8enc, "abcd");
 		if(ostr != dstr){
 			throw new Error("Assert failed to encrypt and decrypt.");
 		}
@@ -204,9 +204,30 @@ window.test = function(){
 
 		alert("Test read and write OK.");
 
-		/** @type {TestRun} */
-		var trun = new TestRun(wkfdr);
-		trun.open(2);
+		// /** @type {TestRun} */
+		// var trun = new TestRun(wkfdr);
+		// trun.open(2);
+
+		/** @type {FolderView} */
+		var FV = GetFolderView();
+		/** @type {FolderItems} */
+		var Selected = FV.SelectedItems();
+		/** @type {Array<FolderItem>} */
+		var fiarr = new Array();
+		for(var i=0; i<Selected.Count; i++){
+			if(!Selected.Item(i).IsFolder){
+				fiarr.push(Selected.Item(i));
+			}
+		}
+		if(fiarr.length == 0){
+			throw new Error("No files selected.");
+		}
+		/** @type {ZgaCrypto.FilesCryptor} */
+		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, true, "abcd", [
+			fso.BuildPath(wkf, "key1.jpg"),
+			"https://cdn.jsdelivr.net/npm/node-forge@1.3.1/lib/index.min.js"
+		]);
+		fcptr.open();
 
 		// /** @type {ZgaCrypto.ProgessBar} */
 		// var pbar = new ZgaCrypto.ProgessBar();

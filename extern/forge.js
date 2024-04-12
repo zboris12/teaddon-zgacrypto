@@ -102,6 +102,12 @@ forge.md.md5 = {};
  */
 forge.md.md5.create = function(){};
 
+forge.md.sha256 = {};
+/**
+ * @return {forge.md.digest}
+ */
+forge.md.sha256.create = function(){};
+
 forge.md.sha512 = {};
 /**
  * @return {forge.md.digest}

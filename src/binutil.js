@@ -58,8 +58,8 @@ ZgaCrypto.BinFile.prototype.close = function(){
  */
 ZgaCrypto.BinReader = function(_fitm){
 	this.super(_fitm.Path);
-	/** @private @type {boolean} */
-	this._isOdd = (_fitm.Size % 2 == 1);
+	/** @private @type {number} */
+	this._size = _fitm.Size;
 	/** @private @type {boolean} */
 	this._end = false;
 	/** @private @type {Array<number>} */
@@ -80,6 +80,16 @@ ZgaCrypto.BinReader.prototype.close = function(){
  */
 ZgaCrypto.BinReader.prototype.isEnd = function(){
 	return this._end;
+};
+/**
+ * @public
+ * @return {Uint8Array}
+ */
+ZgaCrypto.BinReader.prototype.readAll = function(){
+	/** @type {Uint8Array} */
+	var u8arr = this.read(this._size);
+	this.close();
+	return u8arr;
 };
 /**
  * @public
@@ -141,7 +151,7 @@ ZgaCrypto.BinReader.prototype.read = function(size){
 		_this._remain = null;
 	}
 
-	if(_this._end && _this._isOdd){
+	if(_this._end && _this._size % 2){
 		// Get last byte.
 		api.SetFilePointer(_this._hdl, -2, _this.FILE_END);
 		str = api.ReadFile(_this._hdl, 2);

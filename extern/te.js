@@ -156,3 +156,7 @@ var AddEventEx = function(w, nm, fn){};
  * @param {string} path
  */
 var importScript = function(path){};
+/**
+ * @return {XMLHttpRequest}
+ */
+var createHttpRequest = function(){};

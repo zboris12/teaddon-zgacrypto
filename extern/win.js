@@ -59,6 +59,11 @@ FileSystemObject.prototype.GetParentFolderName = function(path){};
  * @return {boolean}
  */
 FileSystemObject.prototype.FileExists = function(path){};
+/**
+ * @param {string} path
+ * @return {FolderItem} //The real type is File.
+ */
+FileSystemObject.prototype.GetFile = function(path){};
 
 
 /** @constructor */
@@ -102,6 +107,8 @@ FolderItem.prototype.Path;
 FolderItem.prototype.Name;
 /** @type {number} */
 FolderItem.prototype.Size;
+/** @type {boolean} */
+FolderItem.prototype.IsFolder;
 
 /** @constructor */
 var FolderItems = function(){};
