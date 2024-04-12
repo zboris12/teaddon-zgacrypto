@@ -43,11 +43,6 @@
       padding-right: 20px;
     }
     </style>
-    <script language="javascript">
-    function SetResult(val){
-      document.getElementById("Result").value = val.toString();
-    }
-    </script>
   </head>
   <body>
     <table class="panel"><tbody>
@@ -66,13 +61,11 @@
       <td id="tdCount" class="tdper">0%</td>
     </tr>
     </tbody></table>
-    <input id="Result" type="hidden" value="0" />
-    <!--panel_end-->
     <table id="buttons" class="footer">
       <tr>
         <td id="Selected" style="text-align: right; width: 100%; white-space: nowrap"></td>
         <td class="buttons">
-          <input id="btnCancel" type="button" value="Cancel" class="cancel" onclick="returnValue=null;SetResult(1);" />
+          <input id="btnCancel" type="button" value="Cancel" class="cancel" />
         </td>
       </tr>
     </table>

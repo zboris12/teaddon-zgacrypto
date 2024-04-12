@@ -1,3 +1,73 @@
+if(!Function.prototype.inherit){
+	/**
+	 * @param {Function} chdcls
+	 */
+	Function.prototype.inherit = function(chdcls){
+		chdcls.super_ = this;
+		if(typeof Object.create === "function"){
+			chdcls.prototype = Object.create(this.prototype, {
+				constructor: {
+					value: chdcls,
+					enumerable: false,
+					writable: true,
+					configurable: true
+				}
+			});
+		}else{
+			// old school shim for old browsers
+			/**
+			 * @constructor
+			 */
+			var tempCtr = function(){};
+			tempCtr.prototype = this.prototype;
+			chdcls.prototype = new tempCtr();
+			chdcls.prototype.constructor = chdcls;
+		}
+
+		if(!chdcls.prototype.getSuperClass){
+			chdcls.prototype.getSuperClass = function(){
+				return this.constructor.super_;
+			};
+		}
+		if(!chdcls.prototype.super){
+			chdcls.prototype.super = function(){
+				/** @type {Array} */
+				var args = Array.from(arguments);
+				return this.constructor.super_.apply(this, args);
+			};
+		}
+		if(!chdcls.prototype.superCall){
+			chdcls.prototype.superCall = function(funcnm){
+				/** @type {Array} */
+				var args = Array.from(arguments);
+				args.shift();
+				if(funcnm){
+					return this.constructor.super_.prototype[funcnm].apply(this, args);
+				}else{
+					return this.constructor.super_.apply(this, args);
+				}
+			};
+		}
+	};
+}
+if(!Array.from){
+	/**
+	 * @param {IArrayLike<T>|Iterable<T>} itr
+	 * @return {Array<R>}
+	 * @suppress {checkTypes}
+	 */
+	Array.from = function(itr){
+		/** @type {Array} */
+		var arr = new Array();
+		/** @type {number} */
+		var i = 0;
+		while(i < itr.length){
+			arr.push(itr[i]);
+			i++;
+		}
+		return arr;
+	};
+}
 if(!Uint8Array.prototype.slice){
 	/**
 	 * @public
@@ -63,6 +133,33 @@ if(!Uint8Array.prototype.toRaw){
 		return ret;
 	};
 }
+if(!Uint8Array.prototype.toBstr){
+	/**
+	 * @public
+	 * @return {string} //BSTR
+	 */
+	Uint8Array.prototype.toBstr = function(){
+		/** @type {Uint8Array} */
+		var uarr = this;
+		if(uarr.length < 2){
+			return "";
+		}
+		if(uarr.length % 2){
+			uarr = uarr.slice(0, uarr.length - 1);
+		}
+		/** @type {DataView} */
+		var vw = new DataView(uarr.buffer);
+		/** @type {string} */
+		var ret = "";
+		/** @type {number} */
+		var i = 0;
+		while(i < uarr.length){
+			ret += String.fromCharCode(vw.getUint16(i, Uint8Array.isSysLe));
+			i += 2;
+		}
+		return ret;
+	};
+}
 if(!Uint8Array.fromRaw){
 	/**
 	 * @param {string} raw
@@ -76,6 +173,33 @@ if(!Uint8Array.fromRaw){
 		while(i < raw.length){
 			arr[i] = raw.charCodeAt(i);
 			i++;
+		}
+		return arr;
+	};
+}
+if(!Uint8Array.fromBstr){
+	/**
+	 * System is little endian or big endian
+	 * @type {boolean}
+	 */
+	Uint8Array.isSysLe = (new Uint8Array(new Uint16Array([1]).buffer)[0] == 1);
+	/**
+	 * @param {string} bstr //BSTR
+	 * @return {!Uint8Array}
+	 */
+	Uint8Array.fromBstr = function(bstr){
+		/** @type {!Uint8Array} */
+		var arr = new Uint8Array(bstr.length * 2);
+		/** @type {DataView} */
+		var vw = new DataView(arr.buffer);
+		/** @type {number} */
+		var j = 0;
+		/** @type {number} */
+		var i = 0;
+		while(i < bstr.length){
+			vw.setUint16(j, bstr.charCodeAt(i), Uint8Array.isSysLe);
+			i++;
+			j += 2;
 		}
 		return arr;
 	};

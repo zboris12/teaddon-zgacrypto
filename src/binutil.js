@@ -1,37 +1,77 @@
 /**
- * System is little endian or big endian
- * @type {boolean}
- */
-ZgaCrypto.isSysLe = (new Uint8Array(new Uint16Array([1]).buffer)[0] == 1);
-/**
+ * @abstract
  * @constructor
- * @param {FolderItem} _fitm
+ * @param {string} _fpath
  */
-ZgaCrypto.BinReader = function(_fitm){
+ZgaCrypto.BinFile = function(_fpath){
+	/** @protected @const {number} */
+	this.FILE_BEGIN = 0;
+	/** @protected @const {number} */
+	this.FILE_CURRENT = 1;
+	/** @protected @const {number} */
+	this.FILE_END = 2;
 	/** @private @type {string} */
-	this._path = _fitm.Path;
+	this._path = _fpath;
 	/** @private @type {number} */
-	this._size = _fitm.Size;
-
-	/** @private @type {boolean} */
-	this._le = ZgaCrypto.isSysLe;
-	/** @private @type {TextStream} */
-	this._strm = null;
-	/** @private @type {boolean} */
-	this._end = false;
-	/** @private @type {number} */
-	this._lastByte = -1;
-	/** @private @type {Array<number>} */
-	this._remain = null;
+	this._hdl = 0;
+};
+/**
+ * @protected
+ * @param {boolean=} forwrite
+ */
+ZgaCrypto.BinFile.prototype.open = function(forwrite){
+	/** @const {number} */
+	const GENERIC_WRITE = 0x40000000;
+	/** @const {number} */
+	const GENERIC_READ = 0x80000000;
+	/** @const {number} */
+	const FILE_SHARE_READ = 0x00000001;
+	/** @const {number} */
+	const CREATE_ALWAYS = 2;
+	/** @const {number} */
+	const OPEN_EXISTING = 3;
+	/** @const {number} */
+	const FILE_ATTRIBUTE_NORMAL = 128;
+	if(forwrite){
+		this._hdl = api.CreateFile(this._path, GENERIC_WRITE, FILE_SHARE_READ, null, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, null);
+	}else{
+		this._hdl = api.CreateFile(this._path, GENERIC_READ, FILE_SHARE_READ, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, null);
+	}
+	if(!this._hdl){
+		throw new Error("Failed to open file.");
+	}
 };
 /**
  * @public
  */
-ZgaCrypto.BinReader.prototype.close = function(){
-	if(this._strm){
-		this._strm.Close();
-		this._strm = null;
+ZgaCrypto.BinFile.prototype.close = function(){
+	if(this._hdl){
+		api.CloseHandle(this._hdl);
+		this._hdl = 0;
 	}
+};
+
+/**
+ * @constructor
+ * @param {FolderItem} _fitm
+ * @extends {ZgaCrypto.BinFile}
+ */
+ZgaCrypto.BinReader = function(_fitm){
+	this.super(_fitm.Path);
+	/** @private @type {boolean} */
+	this._isOdd = (_fitm.Size % 2 == 1);
+	/** @private @type {boolean} */
+	this._end = false;
+	/** @private @type {Array<number>} */
+	this._remain = null;
+};
+ZgaCrypto.BinFile.inherit(ZgaCrypto.BinReader);
+/**
+ * @override
+ * @public
+ */
+ZgaCrypto.BinReader.prototype.close = function(){
+	this.superCall("close");
 	this._remain = null;
 };
 /**
@@ -49,91 +89,49 @@ ZgaCrypto.BinReader.prototype.isEnd = function(){
 ZgaCrypto.BinReader.prototype.read = function(size){
 	/** @const {ZgaCrypto.BinReader} */
 	const _this = this;
-	/** @const {number} */
-	const MIN_SIZE = 3;
 	if(_this._end){
 		return null;
 	}
-	if(size){
-		if(size < MIN_SIZE){
-			throw new Error("size is too small.");
-		}
-	}else{
+	if(!size){
 		size = 160000;
 	}
-	if(!_this._strm){
-		/** @type {string} */
-		var subcmd = '[byte[]]$b=@(0,0);$n=$f.Read($b,0,2);';
-		if(_this._size >= MIN_SIZE){
-			/** @type {number} */
-			var odd = _this._size % 2;
-			if(odd){
-				subcmd = '[byte[]]$b=@(0,0,0);$n=$f.Read($b,0,2);$n=$f.Seek($f.Length-1,0);$b[2]=$f.ReadByte();';
-			}
-		}
-		/** @type {string} */
-		var cmd = '$f=[System.IO.File]::OpenRead(\\"' + _this._path + '\\");' + subcmd + '$f.Close();echo ($b -join \\",\\");';
-		/** @type {?ExecReturn} */
-		var exeret = ZgaCrypto.execPshCommand(cmd);
-		if(!exeret){
-			throw new Error("Failed to execute command.");
-		}else if(exeret._err){
-			throw new Error(exeret._err);
-		}
-		/** @type {Array<number>} */
-		var byts = exeret.out.split(",").map(function(a_s){
-			return parseInt(a_s, 10);
-		});
-		if(_this._size <= MIN_SIZE){
-			_this._end = true;
-			return new Uint8Array(byts);
-		}
-		if(byts.length == 3){
-			_this._lastByte = byts.pop();
-		}
-		if(byts[0] == 0xFF && byts[1] == 0xFE){
-			_this._remain = byts;
-			_this._le = true;
-		}else if(byts[0] == 0xFE && byts[1] == 0xFF){
-			_this._remain = byts;
-			_this._le = false;
-		}
-		_this._strm = fso.OpenTextFile(_this._path, 1, false, -1);
+	if(!_this._hdl){
+		_this.open();
 	}
 
+	/** @type {number} */
+	var rsz = (_this._remain ? (size - _this._remain.length) : size);
+	/** @type {number} */
+	var rsz2 = rsz + (rsz % 2);
+	/** @type {string} */
+	var str = rsz2 ? api.ReadFile(_this._hdl, rsz2) : "";
+	/** @type {number} */
+	var retsz = str.length * 2;
+	if(rsz2 && retsz < rsz2){
+		_this._end = true;
+	}
+
+	retsz += (_this._remain ? _this._remain.length : 0);
 	/** @type {Uint8Array} */
 	var u8arr = null;
-	if(!_this._strm.AtEndOfStream){
-		/** @type {number} */
-		var rsz = (_this._remain ? (size - _this._remain.length) : size) / 2;
-		/** @type {number} */
-		var rsz2 = Math.ceil(rsz);
-		/** @type {string} */
-		var str = _this._strm.Read(rsz2);
-
-		u8arr = new Uint8Array((_this._remain ? _this._remain.length : 0) + (str.length * 2));
-		/** @type {DataView} */
-		var vw = new DataView(u8arr.buffer);
+	if(retsz){
+		u8arr = new Uint8Array(retsz);
 		/** @type {number} */
 		var j = 0;
-		/** @type {number} */
-		var i = 0;
 		if(_this._remain){
-			while(i < _this._remain.length){
-				vw.setUint8(j, _this._remain[i]);
-				i++;
-				j++;
-			}
-			i = 0;
+			u8arr.set(_this._remain, j);
+			j += _this._remain.length;
 			_this._remain = null;
 		}
-		while(i < str.length){
-			vw.setUint16(j, str.charCodeAt(i), _this._le);
-			i++;
-			j += 2;
+		if(str){
+			/** @type {!Uint8Array} */
+			var udat = Uint8Array.fromBstr(str);
+			u8arr.set(udat, j);
+			j += udat.length;
 		}
-		if(u8arr.length > size && rsz2 > rsz){
-			i = u8arr.length - 1;
+		if(retsz > size && rsz2 > rsz){
+			/** @type {number} */
+			var i = u8arr.length - 1;
 			_this._remain = [ u8arr[i] ];
 			u8arr = u8arr.slice(0, i);
 		}
@@ -143,11 +141,13 @@ ZgaCrypto.BinReader.prototype.read = function(size){
 		_this._remain = null;
 	}
 
-	if(!u8arr || u8arr.length < size){
-		_this._end = true;
-		if(_this._lastByte >= 0){
-			u8arr = _this.pushU8Array(u8arr, _this._lastByte);
-		}
+	if(_this._end && _this._isOdd){
+		// Get last byte.
+		api.SetFilePointer(_this._hdl, -2, _this.FILE_END);
+		str = api.ReadFile(_this._hdl, 2);
+		/** @type {!Uint8Array} */
+		var u8last = Uint8Array.fromBstr(str);
+		u8arr = _this.pushU8Array(u8arr, u8last[1]);
 	}
 
 	return u8arr;
@@ -169,35 +169,43 @@ ZgaCrypto.BinReader.prototype.pushU8Array = function(u8arr, num){
 /**
  * @constructor
  * @param {string} _fpath
+ * @extends {ZgaCrypto.BinFile}
  */
 ZgaCrypto.BinWriter = function(_fpath){
-	/** @private @type {string} */
-	this._path = _fpath;
-	/** @private @type {boolean} */
-	this._le = ZgaCrypto.isSysLe;
+	this.super(_fpath);
 	/** @private @type {number} */
 	this._lastByte = -1;
-	/** @private @type {TextStream} */
-	this._strm = null;
 };
+ZgaCrypto.BinFile.inherit(ZgaCrypto.BinWriter);
+
 /**
+ * @override
  * @public
  */
 ZgaCrypto.BinWriter.prototype.close = function(){
-	if(this._strm){
-		this._strm.Close();
-		this._strm = null;
-	}
-	if(this._lastByte >= 0){
-		var cmd = '$f=[System.IO.File]::OpenWrite(\\"' + this._path + '\\");$n=$f.Seek($f.Length,0);$f.WriteByte(' + this._lastByte + ');$f.Close();';
-		ZgaCrypto.execPshCommand(cmd);
-	}
+	this.writeLastByte();
+	this.superCall("close");
 };
 /**
  * @public
  * @param {Uint8Array} dat
  */
 ZgaCrypto.BinWriter.prototype.write = function(dat){
+	if(!this._hdl){
+		this.open(true);
+	}
+	// Use CteMemory to write is slower than BSTR.
+	// /** @type {CteMemory<number>} */
+	// var om = api.Memory("BYTE", dat.length);
+	// /** @type {number} */
+	// var i = 0;
+	// while(i < dat.length){
+		// om[i] = dat[i];
+		// i++;
+	// }
+	// api.WriteFile(this._hdl, om);
+	// om.Free(true);
+
 	/** @const {ZgaCrypto.BinWriter} */
 	const _this = this;
 	/** @type {Uint8Array} */
@@ -223,61 +231,21 @@ ZgaCrypto.BinWriter.prototype.write = function(dat){
 		return;
 	}
 
-	if(!_this._strm){
-		if(dat2[0] == 0xFF && dat2[1] == 0xFE){
-			_this._le = true;
-		}else if(dat2[0] == 0xFE && dat2[1] == 0xFF){
-			_this._le = false;
-		}
-		dat2 = _this.writeFirst2Bytes(dat2);
-		_this._strm = fso.OpenTextFile(_this._path, 8, true, -1);
-	}
-	if(dat2.length == 0){
+	/** @type {string} */
+	var str = dat2.toBstr();
+	api.WriteFile(_this._hdl, str);
+};
+/**
+ * @private
+ */
+ZgaCrypto.BinWriter.prototype.writeLastByte = function(){
+	if(this._lastByte < 0){
 		return;
 	}
-
-	// alert(JSON.stringify(dat2));
-	/** @type {DataView} */
-	var vw = new DataView(dat2.buffer);
-	/** @type {string} */
-	var str = "";
-	/** @type {number} */
-	var i = 0;
-	while(i < dat2.length){
-		str += String.fromCharCode(vw.getUint16(i, _this._le));
-		i += 2;
-	}
-	_this._strm.Write(str);
-};
-/**
- * @private
- * @param {string} raw
- * @return {VBytes}
- */
-ZgaCrypto.BinWriter.prototype.rawToVbBytes = function(raw){
-	/** @type {!ActiveXObject} */
-	var xml = new ActiveXObject("Microsoft.XMLDOM");
-	xml.async = false;
-	var node = xml.createElement("binary");
-	node.dataType = "bin.base64";
-	node.text = btoa(raw);
-	return node.nodeTypedValue;
-};
-/**
- * @private
- * @param {Uint8Array} u8arr
- * @return {Uint8Array}
- */
-ZgaCrypto.BinWriter.prototype.writeFirst2Bytes = function(u8arr){
-	/** @type {string} */
-	var raw = String.fromCharCode(u8arr[0]) + String.fromCharCode(u8arr[1]);
-	/** @type {VBytes} */
-	var vbyts = this.rawToVbBytes(raw);
-	var ado = /** @type {ADOStream} */(api.CreateObject("ads"));
-	ado.Type = adTypeBinary;
-	ado.Open();
-	ado.Write(vbyts);
-	ado.SaveToFile(this._path, adSaveCreateOverWrite);
-	ado.Close();
-	return u8arr.slice(2);
+	/** @type {CteMemory<number>} */
+	var om = api.Memory("BYTE", 1);
+	om[0] = this._lastByte;
+	this._lastByte = -1;
+	api.WriteFile(this._hdl, om);
+	om.Free(true);
 };

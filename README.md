@@ -1,6 +1,7 @@
 # zgacrypto
 ![version](https://img.shields.io/github/package-json/v/zboris12/teaddon-zgacrypto)
 ![license](https://img.shields.io/github/license/zboris12/teaddon-zgacrypto)
+![check status](https://github.com/zboris12/teaddon-zgacrypto/actions/workflows/check.yml/badge.svg)
 
 An addon of [Tablacus Explorer](https://github.com/tablacus/TablacusExplorer) to do encryption and decryption.
 

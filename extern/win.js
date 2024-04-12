@@ -54,6 +54,11 @@ FileSystemObject.prototype.BuildPath = function(path, name){};
  * @return {string}
  */
 FileSystemObject.prototype.GetParentFolderName = function(path){};
+/**
+ * @param {string} path
+ * @return {boolean}
+ */
+FileSystemObject.prototype.FileExists = function(path){};
 
 
 /** @constructor */

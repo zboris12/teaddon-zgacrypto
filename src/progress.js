@@ -1,30 +1,23 @@
 /**
+ * @abstract
  * @constructor
  */
 ZgaCrypto.ProgessBar = function(){
+	/** @protected @type {number} */
+	this.hdStep = -1;
+	/** @protected @type {number} */
+	this.pos = 0;
+	/** @protected @type {number} */
+	this.size = 0;
+
 	/** @private @const {string} */
 	this.htmpath = fso.BuildPath(ZgaCrypto.SRCDIR, "progressbar.html");
-	/**
-	 * interval time (milliseconds)
-	 * @private
-	 * @const {number}
-	 */
-	this.interms = 10;
 	/** @private @type {Window} */
 	this.wnd = null;
-	/**
-	 * @private
-	 * @type {number}
-	 *
-	 * 0:Not ready, 1:In loop, 8: Done, 9:Close, -9:cancelled
-	 */
-	this.step = 0;
-	/** @private @type {boolean} */
-	this.executing = false;
 	/** @private @type {number} */
 	this.hdSize = 0;
-	/** @private @type {number} */
-	this.size = 0;
+	/** @private @type {boolean} */
+	this.executing = false;
 	/** @private @type {number} */
 	this.hdloop = 0;
 	/** @private @type {Date} */
@@ -33,103 +26,111 @@ ZgaCrypto.ProgessBar = function(){
 	this.oldels = 0;
 	/** @private @type {string} */
 	this.oldelstr = "";
-	/** @private @type {Function|undefined} */
-	this.initFunc = null;
-	/** @private @type {Function|undefined} */
-	this.loopFunc = null;
+	/** @private @type {boolean} */
+	this.closed = false;
 };
 
 /**
  * @public
- * @param {Function=} initFunc
- * @param {Function=} loopFunc
  * @param {number=} hdSize
  */
-ZgaCrypto.ProgessBar.prototype.open = function(initFunc, loopFunc, hdSize){
-	this.initFunc = initFunc;
-	this.loopFunc = loopFunc;
-	this.hdSize = hdSize || 0;
+ZgaCrypto.ProgessBar.prototype.open = function(hdSize){
+	this.hdSize = hdSize || 1;
+	/** @type {ZgaCrypto.ProgessBar} */
+	var _this = this;
 	/** @type {TablacusControl} */
-	var c = ShowDialog(this.htmpath, { MainWindow: MainWindow, Modal: true, width: 500, height: 200});
-	this.wnd = c.Window;
-	this.hdloop = setInterval(this.loop.bind(this), this.interms);
-};
-/**
- * @public
- * @return {boolean}
- */
-ZgaCrypto.ProgessBar.prototype.isReady = function(){
-	return (this.step > 0);
-};
-/**
- * @public
- * @param {number} sz
- */
-ZgaCrypto.ProgessBar.prototype.setSize = function(sz){
-	this.size = sz;
-};
-/**
- * @public
- * @param {number} pos
- * @param {string=} msg
- */
-ZgaCrypto.ProgessBar.prototype.setHdPosition = function(pos, msg){
-	try{
-		if(!this.isReady()){
-			return;
+	var c = ShowDialog(_this.htmpath, { MainWindow: MainWindow, Modal: true, width: 500, height: 200});
+	_this.wnd = c.Window;
+	AddEventEx(_this.wnd, "load", function(){
+		AddEventEx(_this.wnd.document.getElementById("btnCancel"), "click", function(){
+			_this.wnd.close();
+		});
+		if(_this.hdSize > 1){
+			_this.wnd.document.getElementById("trHeader").style.display = "";
+			_this.wnd.document.getElementById("trHdPrgs").style.display = "";
 		}
-		if(msg){
-			this.wnd.document.getElementById("tdHeader").innerHTML = msg;
-		}
+		_this.wnd.document.getElementById("trMain").style.display = "";
+		_this.wnd.document.getElementById("trPrgs").style.display = "";
+		_this.stdt = new Date();
+		_this.hdloop = setInterval(_this.loop.bind(_this), 10);
+	});
+	AddEventEx(_this.wnd, "beforeunload", function(){
+		_this.closed = true;
+		_this.stopLoop();
+		_this.dispose();
+	});
+};
 
-		if(!this.hdSize){
-			return;
-		}
-		if(pos > this.hdSize){
-			pos = this.hdSize;
-		}
-		this.wnd.document.getElementById("tdHdCnt").innerHTML = pos + "/" + this.hdSize;
-		this.wnd.document.getElementById("divHdPrgs").style.width = Math.floor(this.wnd.document.getElementById("tdprgs").clientWidth * pos / this.hdSize) + "px";
-	}catch(ex){
-		this.step = -9;
+/**
+ * @protected
+ * @return {boolean} process end or not
+ */
+ZgaCrypto.ProgessBar.prototype.hdStepForward = function(){
+	if(this.closed){
+		return true;
+	}
+	if(this.hdStep < this.hdSize){
+		this.hdStep++;
+	}
+
+	if(this.hdSize > 1){
+		this.wnd.document.getElementById("tdHdCnt").innerHTML = this.hdStep + "/" + this.hdSize;
+		this.wnd.document.getElementById("divHdPrgs").style.width = Math.floor(this.wnd.document.getElementById("tdprgs").clientWidth * this.hdStep / this.hdSize) + "px";
+	}
+	if(this.hdStep < this.hdSize){
+		/** @type {string} */
+		var msg = this.prepareHdStep();
+		this.wnd.document.getElementById("tdHeader").innerHTML = msg;
+		return false;
+	}else{
+		this.stopLoop();
+		this.wnd.document.getElementById("tdHeader").innerHTML = "Done";
+		this.wnd.document.getElementById("btnCancel").value = "Close";
+		return true;
 	}
 };
 /**
- * @public
- * @param {number} pos
+ * @protected
+ * @param {number} offset
  * @param {string=} msg
+ * @return {boolean} is it ok to continue?
  */
-ZgaCrypto.ProgessBar.prototype.setPosition = function(pos, msg){
-	try{
-		if(!this.isReady()){
-			return;
-		}
-		this.wnd.document.getElementById("tdMain").innerHTML = this.getElapsedTime() + " " + (msg || "");
-
-		if(!this.size){
-			return;
-		}
-		if(pos > this.size){
-			pos = this.size;
-		}
-		this.wnd.document.getElementById("tdCount").innerHTML = Math.floor(100 * pos / this.size) + "%";
-		this.wnd.document.getElementById("divPrgs").style.width = Math.floor(this.wnd.document.getElementById("tdprgs").clientWidth * pos / this.size) + "px";
-		if(this.wnd.document.getElementById("Result").value == "1"){
-			this.step = -9;
-		}
-	}catch(ex){
-		this.step = -9;
+ZgaCrypto.ProgessBar.prototype.stepForward = function(offset, msg){
+	if(this.closed){
+		return false;
 	}
+	this.wnd.document.getElementById("tdMain").innerHTML = this.getElapsedTime() + " " + (msg || "");
+
+	if(!this.size){
+		return true;
+	}
+	this.pos += offset;
+	if(this.pos > this.size){
+		this.pos = this.size;
+	}
+	this.wnd.document.getElementById("tdCount").innerHTML = Math.floor(100 * this.pos / this.size) + "%";
+	this.wnd.document.getElementById("divPrgs").style.width = Math.floor(this.wnd.document.getElementById("tdprgs").clientWidth * this.pos / this.size) + "px";
+
+	return true;
 };
 /**
- * @public
- * @return {boolean}
+ * @abstract
+ * @protected
+ * @return {string} header message
  */
-ZgaCrypto.ProgessBar.prototype.isCancelled = function(){
-	return (this.step == -9);
-};
+ZgaCrypto.ProgessBar.prototype.prepareHdStep = function(){};
 /**
- * @public
+ * @abstract
+ * @protected
+ */
+ZgaCrypto.ProgessBar.prototype.step = function(){};
+/**
+ * @abstract
+ * @protected
+ */
+ZgaCrypto.ProgessBar.prototype.dispose = function(){};
+/**
+ * @private
  * @return {string}
  */
 ZgaCrypto.ProgessBar.prototype.getElapsedTime = function(){
@@ -154,65 +155,26 @@ ZgaCrypto.ProgessBar.prototype.getElapsedTime = function(){
 	return this.oldelstr;
 };
 /**
- * @public
+ * @private
  */
-ZgaCrypto.ProgessBar.prototype.close = function(){
-	this.step = 9;
+ZgaCrypto.ProgessBar.prototype.stopLoop = function(){
+		if(this.hdloop){
+			clearInterval(this.hdloop);
+			this.hdloop = 0;
+		}
 };
-/**
- * @public
- */
-ZgaCrypto.ProgessBar.prototype.done = function(){
-	this.step = 8;
-	this.wnd.document.getElementById("btnCancel").value = "Close";
-};
-
 /**
  * @private
  */
 ZgaCrypto.ProgessBar.prototype.loop = function(){
 	try{
-		if(this.executing){
+		if(this.executing || this.closed){
 			return;
 		}
 		this.executing = true;
-		switch(this.step){
-		case 0:
-			if(this.wnd.document.readyState == "complete"){
-				this.step = 1;
-				if(this.hdSize > 1){
-					this.wnd.document.getElementById("trHeader").style.display = "";
-					this.wnd.document.getElementById("trHdPrgs").style.display = "";
-				}
-				this.wnd.document.getElementById("trMain").style.display = "";
-				this.wnd.document.getElementById("trPrgs").style.display = "";
-				this.stdt = new Date();
-				if(this.initFunc){
-					this.initFunc();
-				}
-			}
-			break;
-		case 1:
-			if(this.loopFunc){
-				this.loopFunc();
-			}
-			break;
-		case 8:
-			if(this.wnd.document.getElementById("Result").value == "1"){
-				this.step = 9;
-			}
-			break;
-		case 9:
-		case -9:
-			clearInterval(this.hdloop);
-			this.hdloop = 0;
-			this.wnd.close();
-			break;
-		}
+		this.step();
 		this.executing = false;
 	}catch(ex){
-		clearInterval(this.hdloop);
-		this.hdloop = 0;
-		this.step = -9;
+		this.wnd.close();
 	}
 };

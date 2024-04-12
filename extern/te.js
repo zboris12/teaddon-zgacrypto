@@ -14,6 +14,16 @@ te.Data = {};
 /** @type {string} */
 te.Data.Installed;
 
+/**
+ * @constructor
+ * @extends {Array}
+ */
+var CteMemory = function(){};
+/**
+ * @param {boolean} flg
+ */
+CteMemory.prototype.Free = function(flg){};
+
 var api = {};
 /**
  * @param {number} desired
@@ -37,6 +47,63 @@ api.CloseHandle = function(hdl){};
  * @return {ADOStream}
  */
 api.CreateObject = function(nm){};
+/**
+ * @param {string} lpFileName
+ * @param {?number} dwDesiredAccess
+ * @param {?number} dwShareMode
+ * @param {?number} lpSecurityAttributes
+ * @param {?number} dwCreationDisposition
+ * @param {?number} dwFlagsAndAttributes
+ * @param {?number} hTemplateFile
+ * @return {number}
+ */
+api.CreateFile = function(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile){};
+/**
+ * @param {number} hFile
+ * @param {?number} nNumberOfBytesToRead
+ * @return {string} //BSTR
+ */
+api.ReadFile = function(hFile, nNumberOfBytesToRead){};
+/**
+ * @param {number} hFile
+ * @param {number} lDistanceToMove
+ * @param {number} dwMoveMethods
+ * @return {number}
+ */
+api.SetFilePointer = function(hFile, lDistanceToMove, dwMoveMethods){};
+/**
+ * @param {number} hFile
+ * @param {string|CteMemory} data //BSTR
+ * @return {boolean}
+ */
+api.WriteFile = function(hFile, data){};
+/**
+ * @param {string} type
+ * @param {number} size
+ * @return {CteMemory<number>}
+ */
+api.Memory = function(type, size){};
+/**
+ * @param {string} dat
+ * @param {string} key
+ * @param {boolean} tostr
+ * @return {string} //BSTR
+ */
+api.CryptProtectData = function(dat, key, tostr){};
+/**
+ * @param {string} dat //BSTR
+ * @param {string} key
+ * @param {boolean} tostr
+ * @return {string}
+ */
+api.CryptUnprotectData = function(dat, key, tostr){};
+/**
+ * @param {null} dmy
+ * @param {string} url
+ * @param {string} fnm
+ * @return {number}
+ */
+api.URLDownloadToFile = function(dmy, url, fnm){};
 
 /** @type {WshScript} */
 var wsh;
@@ -79,3 +146,13 @@ var OpenAdodbFromTextFile = function(fil){};
  * @return {TablacusControl}
  */
 var ShowDialog = function(fn, opt){};
+/**
+ * @param {Window|Element} w
+ * @param {string} nm
+ * @param {function(Event=):void} fn
+ */
+var AddEventEx = function(w, nm, fn){};
+/**
+ * @param {string} path
+ */
+var importScript = function(path){};

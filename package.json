@@ -1,6 +1,6 @@
 {
   "name": "teaddon-zgacrypto",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": false,
   "scripts": {
     "check": "./build.sh check",
