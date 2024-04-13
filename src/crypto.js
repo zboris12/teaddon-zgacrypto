@@ -117,17 +117,39 @@ ZgaCrypto.decryptLocal = function(_dat, _key){
 };
 
 /**
+ * @typedef
+ * {{
+ *    _encrypt: (boolean|undefined),
+ *    _algorithm: (string|undefined),
+ *    _pwd: (string|undefined),
+ *    _keyfs: (Array<string>|undefined),
+ *    _outext: (string|undefined),
+ * }}
+ */
+var CryptoOptions;
+
+/**
  * @constructor
  * @param {Array<FolderItem>} _fis
- * @param {boolean} _encrypt
- * @param {string} _pwd
- * @param {Array<string>=} _keyfs
+ * @param {CryptoOptions} _opt
  * @extends {ZgaCrypto.ProgessBar}
  */
-ZgaCrypto.FilesCryptor = function(_fis, _encrypt, _pwd, _keyfs){
+ZgaCrypto.FilesCryptor = function(_fis, _opt){
 	this.super();
 	/** @private @type {boolean} */
-	this.enc = _encrypt;
+	this.enc = _opt._encrypt || false;
+	/**
+	 * @private
+	 * @type {string}
+	 * valid values are "AES-ECB","AES-CBC","AES-CFB","AES-OFB","AES-CTR","AES-GCM"
+	 */
+	this.algo = _opt._algorithm || "AES-CBC";
+	/**
+	 * @private
+	 * @type {string}
+	 * "-" means remove the extension.
+	 */
+	this.outext = _opt._outext || (this.enc ? "enc" : "dec");
 	/** @private @type {Array<FolderItem>} */
 	this.fis = _fis;
 	/** @private @type {ZgaCrypto.BinReader} */
@@ -136,11 +158,11 @@ ZgaCrypto.FilesCryptor = function(_fis, _encrypt, _pwd, _keyfs){
 	this.wtr = null;
 
 	/** @private @type {CryptoSecrets} */
-	this.scs = this.deriveSecrets(_pwd, _keyfs);
+	this.scs = this.deriveSecrets(_opt._pwd, _opt._keyfs);
 	/** @private @type {forge.cipher.BlockCipher} */
 	this.cryptor = null;
 };
-ZgaCrypto.ProgessBar.inherit(ZgaCrypto.FilesCryptor);
+ZgaCrypto.FilesCryptor.inherit(ZgaCrypto.ProgessBar);
 /**
  * @override
  * @public
@@ -174,20 +196,20 @@ ZgaCrypto.FilesCryptor.prototype.prepareHdStep = function(){
 	/** @type {FolderItem} */
 	var fi = this.fis[this.hdStep];
 	this.rdr = new ZgaCrypto.BinReader(fi);
-	this.wtr = new ZgaCrypto.BinWriter(fi.Path + (this.enc ? ".enc" : ".dec"));
+	this.wtr = new ZgaCrypto.BinWriter(this.getOutPath(fi.Path));
 	/** @type {forge.util.ByteBuffer} */
 	var key2 = new forge.util.ByteBuffer(this.scs._key);
 	if(this.enc){
-		this.cryptor = forge.cipher.createCipher("AES-CBC", key2);
+		this.cryptor = forge.cipher.createCipher(this.algo, key2);
 	}else{
-		this.cryptor = forge.cipher.createDecipher("AES-CBC", key2);
+		this.cryptor = forge.cipher.createDecipher(this.algo, key2);
 	}
 	this.cryptor.start({iv: this.scs._iv});
 	this.size = fi.Size;
 	this.pos = 0;
 	this.stepForward(0);
 
-	return (this.enc ? "Encrypting " : "Decrypting") + fi.Name;
+	return (this.enc ? "Encrypting " : "Decrypting ") + fi.Name;
 };
 /**
  * @override
@@ -207,6 +229,44 @@ ZgaCrypto.FilesCryptor.prototype.step = function(){
 			this.dispose();
 		}
 	}
+};
+/**
+ * @private
+ * @param {string} _in
+ * @return {string}
+ */
+ZgaCrypto.FilesCryptor.prototype.getOutPath = function(_in){
+	/** @type {string} */
+	var fb = _in;
+	/** @type {string} */
+	var ext = this.outext;
+	if(ext == "-"){
+		/** @type {string} */
+		var e = fso.GetExtensionName(_in);
+		if(e){
+			/** @type {string} */
+			var p = fso.GetParentFolderName(_in);
+			/** @type {string} */
+			var b = fso.GetBaseName(_in);
+			/** @type {string} */
+			var bb = fso.GetBaseName(b);
+			fb = fso.BuildPath(p, bb);
+			if(b != bb){
+				ext = fso.GetExtensionName(b);
+			}
+		}
+	}
+
+	ext = "." + ext;
+	/** @type {number} */
+	var i = 0;
+	/** @type {string} */
+	var f = fb + ext;
+	while(fso.FileExists(f)){
+		i++;
+		f = fb + "(" + i +")" + ext;
+	}
+	return f;
 };
 /**
  * @private
@@ -232,7 +292,7 @@ ZgaCrypto.FilesCryptor.prototype.consume = function(_u8, _final){
 };
 /**
  * @private
- * @param {string} _pwd
+ * @param {string=} _pwd
  * @param {Array<string>=} _keyfs
  * @return {CryptoSecrets}
  */
@@ -246,11 +306,14 @@ ZgaCrypto.FilesCryptor.prototype.deriveSecrets = function(_pwd, _keyfs){
 		var i = 0;
 		while(i < _keyfs.length){
 			md.update(this.loadKey(_keyfs[i]));
+			i++;
 		}
 		key = md.digest().getBytes();
 		return ZgaCrypto.deriveSecrets(key, _pwd);
-	}else{
+	}else if(_pwd){
 		return ZgaCrypto.deriveSecrets(_pwd);
+	}else{
+		throw new Error("No password nor key file specified.");
 	}
 };
 /**
@@ -280,5 +343,89 @@ ZgaCrypto.FilesCryptor.prototype.loadKey = function(_keyf){
 		return u8arr.toRaw();
 	}else{
 		throw new Error("Can't load key file.\n" + _keyf);
+	}
+};
+
+/**
+ * @constructor
+ * @param {Array<FolderItem>} _fis
+ * @param {string=} _algorithm
+ * @extends {ZgaCrypto.ProgessBar}
+ */
+ZgaCrypto.FilesHasher = function(_fis, _algorithm){
+	this.super();
+	/**
+	 * @private
+	 * @type {string}
+	 * valid values are "md5","sha1","sha256","sha512"
+	 */
+	this.algo = _algorithm || "md5";
+	/** @private @type {Array<FolderItem>} */
+	this.fis = _fis;
+	/** @private @type {ZgaCrypto.BinReader} */
+	this.rdr = null;
+	/** @private @type {forge.md.digest} */
+	this.md = null;
+};
+ZgaCrypto.FilesHasher.inherit(ZgaCrypto.ProgessBar);
+/**
+ * @override
+ * @public
+ */
+ZgaCrypto.FilesHasher.prototype.open = function(){
+	this.superCall("open", this.fis.length, true);
+};
+/**
+ * @override
+ * @protected
+ */
+ZgaCrypto.FilesHasher.prototype.dispose = function(){
+	if(this.rdr){
+		this.rdr.close();
+		this.rdr = null;
+	}
+	if(this.md){
+		this.md = null;
+	}
+};
+/**
+ * @override
+ * @protected
+ * @return {string}
+ */
+ZgaCrypto.FilesHasher.prototype.prepareHdStep = function(){
+	/** @type {FolderItem} */
+	var fi = this.fis[this.hdStep];
+	this.rdr = new ZgaCrypto.BinReader(fi);
+	this.md = forge.md[this.algo].create();
+	this.md.start();
+	this.size = fi.Size;
+	this.pos = 0;
+	this.stepForward(0);
+
+	return "Calculating hash of " + fi.Name;
+};
+/**
+ * @override
+ * @protected
+ */
+ZgaCrypto.FilesHasher.prototype.step = function(){
+	if(!this.md){
+		this.hdStepForward();
+	}else{
+		/** @const {number} */
+		const bufsz = 500000;
+		/** @type {Uint8Array} */
+		var u8 = this.rdr.read(bufsz);
+		this.md.update(u8.toRaw());
+		this.stepForward(bufsz);
+		if(this.rdr.isEnd()){
+			/** @type {FolderItem} */
+			var fi = this.fis[this.hdStep];
+			/** @type {string} */
+			var val = this.md.digest().toHex();
+			this.appendResult(this.algo + " hash value of " + fi.Name + " :\n" + val + "\n");
+			this.dispose();
+		}
 	}
 };

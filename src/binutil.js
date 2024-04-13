@@ -65,7 +65,7 @@ ZgaCrypto.BinReader = function(_fitm){
 	/** @private @type {Array<number>} */
 	this._remain = null;
 };
-ZgaCrypto.BinFile.inherit(ZgaCrypto.BinReader);
+ZgaCrypto.BinReader.inherit(ZgaCrypto.BinFile);
 /**
  * @override
  * @public
@@ -186,7 +186,7 @@ ZgaCrypto.BinWriter = function(_fpath){
 	/** @private @type {number} */
 	this._lastByte = -1;
 };
-ZgaCrypto.BinFile.inherit(ZgaCrypto.BinWriter);
+ZgaCrypto.BinWriter.inherit(ZgaCrypto.BinFile);
 
 /**
  * @override

@@ -31,6 +31,37 @@ WshScript.prototype.Exec = function(cmd){};
 /** @constructor */
 var FileSystemObject = function(){};
 /**
+ * @param {string} path
+ * @param {string} name
+ * @return {string}
+ */
+FileSystemObject.prototype.BuildPath = function(path, name){};
+/**
+ * @param {string} path
+ * @return {boolean}
+ */
+FileSystemObject.prototype.FileExists = function(path){};
+/**
+ * @param {string} path
+ * @return {string}
+ */
+FileSystemObject.prototype.GetBaseName = function(path){};
+/**
+ * @param {string} path
+ * @return {string}
+ */
+FileSystemObject.prototype.GetExtensionName = function(path){};
+/**
+ * @param {string} path
+ * @return {FolderItem} //The real type is File.
+ */
+FileSystemObject.prototype.GetFile = function(path){};
+/**
+ * @param {string} path
+ * @return {string}
+ */
+FileSystemObject.prototype.GetParentFolderName = function(path){};
+/**
  * @param {string} filename
  * @param {number=} iomode // 1: ForReading, 2: ForWriting, 8: ForAppending
  * @param {boolean=} create
@@ -43,28 +74,6 @@ var FileSystemObject = function(){};
  *  TristateFalse       0: Opens the file as ASCII.
  */
 FileSystemObject.prototype.OpenTextFile = function(filename, iomode, create, format){};
-/**
- * @param {string} path
- * @param {string} name
- * @return {string}
- */
-FileSystemObject.prototype.BuildPath = function(path, name){};
-/**
- * @param {string} path
- * @return {string}
- */
-FileSystemObject.prototype.GetParentFolderName = function(path){};
-/**
- * @param {string} path
- * @return {boolean}
- */
-FileSystemObject.prototype.FileExists = function(path){};
-/**
- * @param {string} path
- * @return {FolderItem} //The real type is File.
- */
-FileSystemObject.prototype.GetFile = function(path){};
-
 
 /** @constructor */
 var TextStream = function(){};
@@ -107,7 +116,10 @@ FolderItem.prototype.Path;
 FolderItem.prototype.Name;
 /** @type {number} */
 FolderItem.prototype.Size;
-/** @type {boolean} */
+/**
+ * @type {boolean}
+ * If it is a zip file, the property is alos true.
+ */
 FolderItem.prototype.IsFolder;
 
 /** @constructor */

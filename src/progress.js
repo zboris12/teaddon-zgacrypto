@@ -33,24 +33,35 @@ ZgaCrypto.ProgessBar = function(){
 /**
  * @public
  * @param {number=} hdSize
+ * @param {boolean=} showResult
  */
-ZgaCrypto.ProgessBar.prototype.open = function(hdSize){
+ZgaCrypto.ProgessBar.prototype.open = function(hdSize, showResult){
 	this.hdSize = hdSize || 1;
 	/** @type {ZgaCrypto.ProgessBar} */
 	var _this = this;
 	/** @type {TablacusControl} */
-	var c = ShowDialog(_this.htmpath, { MainWindow: MainWindow, Modal: true, width: 500, height: 200});
+	var c = ShowDialog(_this.htmpath, {
+		MainWindow: MainWindow,
+		Modal: true,
+		width: 500,
+		height: (this.hdSize > 1 ? 190 : 130) + (showResult ? 190 : 0),
+	});
 	_this.wnd = c.Window;
-	AddEventEx(_this.wnd, "load", function(){
-		AddEventEx(_this.wnd.document.getElementById("btnCancel"), "click", function(){
+	AddEventEx(_this.wnd, "load", function(_evt){
+		var doc = /** @type {Document} */(_evt.target);
+		AddEventEx(doc.getElementById("btnCancel"), "click", function(){
 			_this.wnd.close();
 		});
 		if(_this.hdSize > 1){
-			_this.wnd.document.getElementById("trHeader").style.display = "";
-			_this.wnd.document.getElementById("trHdPrgs").style.display = "";
+			doc.getElementById("trHeader").style.display = "";
+			doc.getElementById("trHdPrgs").style.display = "";
 		}
-		_this.wnd.document.getElementById("trMain").style.display = "";
-		_this.wnd.document.getElementById("trPrgs").style.display = "";
+		doc.getElementById("trMain").style.display = "";
+		doc.getElementById("trPrgs").style.display = "";
+		if(showResult){
+			doc.getElementById("trResult").style.display = "";
+			doc.getElementById("taResult").value = "";
+		}
 		_this.stdt = new Date();
 		_this.hdloop = setInterval(_this.loop.bind(_this), 10);
 	});
@@ -114,6 +125,13 @@ ZgaCrypto.ProgessBar.prototype.stepForward = function(offset, msg){
 	return true;
 };
 /**
+ * @protected
+ * @param {string} msg
+ */
+ZgaCrypto.ProgessBar.prototype.appendResult = function(msg){
+	this.wnd.document.getElementById("taResult").value += msg + "\n";
+};
+/**
  * @abstract
  * @protected
  * @return {string} header message
@@ -175,6 +193,7 @@ ZgaCrypto.ProgessBar.prototype.loop = function(){
 		this.step();
 		this.executing = false;
 	}catch(ex){
+		alert(ex.stack);
 		this.wnd.close();
 	}
 };

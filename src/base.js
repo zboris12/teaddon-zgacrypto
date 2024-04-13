@@ -1,13 +1,13 @@
 if(!Function.prototype.inherit){
 	/**
-	 * @param {Function} chdcls
+	 * @param {Function} ptcls parent class
 	 */
-	Function.prototype.inherit = function(chdcls){
-		chdcls.super_ = this;
+	Function.prototype.inherit = function(ptcls){
+		this.super_ = ptcls;
 		if(typeof Object.create === "function"){
-			chdcls.prototype = Object.create(this.prototype, {
+			this.prototype = Object.create(ptcls.prototype, {
 				constructor: {
-					value: chdcls,
+					value: this,
 					enumerable: false,
 					writable: true,
 					configurable: true
@@ -19,25 +19,25 @@ if(!Function.prototype.inherit){
 			 * @constructor
 			 */
 			var tempCtr = function(){};
-			tempCtr.prototype = this.prototype;
-			chdcls.prototype = new tempCtr();
-			chdcls.prototype.constructor = chdcls;
+			tempCtr.prototype = ptcls.prototype;
+			this.prototype = new tempCtr();
+			this.prototype.constructor = this;
 		}
 
-		if(!chdcls.prototype.getSuperClass){
-			chdcls.prototype.getSuperClass = function(){
+		if(!this.prototype.getSuperClass){
+			this.prototype.getSuperClass = function(){
 				return this.constructor.super_;
 			};
 		}
-		if(!chdcls.prototype.super){
-			chdcls.prototype.super = function(){
+		if(!this.prototype.super){
+			this.prototype.super = function(){
 				/** @type {Array} */
 				var args = Array.from(arguments);
 				return this.constructor.super_.apply(this, args);
 			};
 		}
-		if(!chdcls.prototype.superCall){
-			chdcls.prototype.superCall = function(funcnm){
+		if(!this.prototype.superCall){
+			this.prototype.superCall = function(funcnm){
 				/** @type {Array} */
 				var args = Array.from(arguments);
 				args.shift();
@@ -147,15 +147,15 @@ if(!Uint8Array.prototype.toBstr){
 		if(uarr.length % 2){
 			uarr = uarr.slice(0, uarr.length - 1);
 		}
-		/** @type {DataView} */
-		var vw = new DataView(uarr.buffer);
+		/** @type {Uint16Array} */
+		var u16 = new Uint16Array(uarr.buffer);
 		/** @type {string} */
 		var ret = "";
 		/** @type {number} */
 		var i = 0;
-		while(i < uarr.length){
-			ret += String.fromCharCode(vw.getUint16(i, Uint8Array.isSysLe));
-			i += 2;
+		while(i < u16.length){
+			ret += String.fromCharCode(u16[i]);
+			i++;
 		}
 		return ret;
 	};
@@ -179,29 +179,19 @@ if(!Uint8Array.fromRaw){
 }
 if(!Uint8Array.fromBstr){
 	/**
-	 * System is little endian or big endian
-	 * @type {boolean}
-	 */
-	Uint8Array.isSysLe = (new Uint8Array(new Uint16Array([1]).buffer)[0] == 1);
-	/**
 	 * @param {string} bstr //BSTR
 	 * @return {!Uint8Array}
 	 */
 	Uint8Array.fromBstr = function(bstr){
-		/** @type {!Uint8Array} */
-		var arr = new Uint8Array(bstr.length * 2);
-		/** @type {DataView} */
-		var vw = new DataView(arr.buffer);
-		/** @type {number} */
-		var j = 0;
+		/** @type {Uint16Array} */
+		var u16 = new Uint16Array(bstr.length);
 		/** @type {number} */
 		var i = 0;
-		while(i < bstr.length){
-			vw.setUint16(j, bstr.charCodeAt(i), Uint8Array.isSysLe);
+		while(i < u16.length){
+			u16[i] = bstr.charCodeAt(i);
 			i++;
-			j += 2;
 		}
-		return arr;
+		return new Uint8Array(u16.buffer);
 	};
 }
 

@@ -63,7 +63,7 @@ window.test = function(){
 		/** @private @type {forge.cipher.BlockCipher} */
 		this.cryptor = null;
 	}
-	ZgaCrypto.ProgessBar.inherit(TestRun);
+	TestRun.inherit(ZgaCrypto.ProgessBar);
 	/**
 	 * @override
 	 * @protected
@@ -215,7 +215,7 @@ window.test = function(){
 		/** @type {Array<FolderItem>} */
 		var fiarr = new Array();
 		for(var i=0; i<Selected.Count; i++){
-			if(!Selected.Item(i).IsFolder){
+			if(fso.FileExists(Selected.Item(i).Path)){
 				fiarr.push(Selected.Item(i));
 			}
 		}
@@ -223,79 +223,20 @@ window.test = function(){
 			throw new Error("No files selected.");
 		}
 		/** @type {ZgaCrypto.FilesCryptor} */
-		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, true, "abcd", [
-			fso.BuildPath(wkf, "key1.jpg"),
-			"https://cdn.jsdelivr.net/npm/node-forge@1.3.1/lib/index.min.js"
-		]);
+		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, {
+			_algorithm: "AES-ECB",
+			_encrypt: true,
+			// _outext: "-",
+			_pwd: "abcd",
+			_keyfs: [
+				fso.BuildPath(wkf, "key1.jpg"),
+				"https://cdn.jsdelivr.net/npm/node-forge@1.3.1/lib/index.min.js"
+			],
+		});
 		fcptr.open();
-
-		// /** @type {ZgaCrypto.ProgessBar} */
-		// var pbar = new ZgaCrypto.ProgessBar();
-		// /** @type {FolderItem} */
-		// var fim = null;
-		// /** @type {ZgaCrypto.BinReader} */
-		// var rdr = null;
-		// /** @type {ZgaCrypto.BinWriter} */
-		// var wtr = null;
-
-		// /** @type {CryptoSecrets} */
-		// var scs = ZgaCrypto.deriveSecrets("abcd", "1234");
-		// /** @type {forge.util.ByteBuffer} */
-		// var key2 = null;
-		// /** @type {forge.cipher.BlockCipher} */
-		// var cryptor = null;
-
-
-		// pbar.open(function(){
-			// /** @type {number} */
-			// var hdstep = 0;
-			// /** @type {number} */
-			// var pos = 0;
-			// /** @type {boolean} */
-			// var cancelled = false;
-			// while(hdstep < 2){
-				// if(hdstep == 0){
-					// fim = wkfdr.ParseName("bigdata.zip");
-					// rdr = new ZgaCrypto.BinReader(fim);
-					// wtr = new ZgaCrypto.BinWriter(fim.Path + ".enc");
-
-					// key2 = new forge.util.ByteBuffer(scs._key);
-					// cryptor = forge.cipher.createCipher("AES-CBC", key2);
-					// cryptor.start({iv: scs._iv});
-
-					// pbar.setHdPosition(hdstep, "Encrypting " + fim.Name);
-				// }else{
-					// fim = wkfdr.ParseName("bigdata.zip.enc");
-					// rdr = new ZgaCrypto.BinReader(fim);
-					// wtr = new ZgaCrypto.BinWriter(fim.Path + ".dec");
-
-					// key2 = new forge.util.ByteBuffer(scs._key);
-					// cryptor = forge.cipher.createDecipher("AES-CBC", key2);
-					// cryptor.start({iv: scs._iv});
-
-					// pbar.setHdPosition(hdstep, "Decrypting " + fim.Name);
-				// }
-				// pbar.setSize(fim.Size);
-				// pos = 0;
-				// pbar.setPosition(pos);
-				// /** @type {Uint8Array} */
-				// var u8 = null;
-				// while(!rdr.isEnd() && !cancelled){
-					// u8 = rdr.read(500000);
-					// consume(u8, rdr.isEnd());
-					// pos += 500000;
-					// cancelled = !pbar.setPosition(pos);
-				// }
-				// rdr.close();
-				// wtr.close();
-				// if(cancelled){
-					// break;
-				// }
-				// hdstep++;
-			// }
-			// pbar.setHdPosition(hdstep, "Done");
-			// pbar.done();
-		// }, 2);
+		/** @type {ZgaCrypto.FilesHasher} */
+		var fhsr = new ZgaCrypto.FilesHasher(fiarr, "sha256");
+		fhsr.open();
 
 	}catch(ex){
 		alert(ex.stack);
