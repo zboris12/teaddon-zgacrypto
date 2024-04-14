@@ -122,6 +122,10 @@ forge.hmac.create = function(){};
 
 forge.cipher = {};
 /** @constructor */
+forge.cipher.Mode = function(){};
+/** @type {forge.util.ByteBuffer} */
+forge.cipher.Mode.prototype.tag;
+/** @constructor */
 forge.cipher.BlockCipher = function(){};
 /**
  * @typedef
@@ -148,6 +152,8 @@ forge.cipher.BlockCipher.prototype.update = function(input){};
 forge.cipher.BlockCipher.prototype.finish = function(){};
 /** @type {forge.util.ByteBuffer} */
 forge.cipher.BlockCipher.prototype.output;
+/** @type {forge.cipher.Mode} */
+forge.cipher.BlockCipher.prototype.mode;
 /**
  * @param {string} algorithm
  * @param {forge.util.ByteBuffer} key

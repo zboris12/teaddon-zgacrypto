@@ -58,6 +58,31 @@ ZgaCrypto.initCryptoEnv = function(forgepath){
 };
 
 /**
+ * Only the same user on the same computer who encrypted the data can decrypt the data.
+ *
+ * @param {string} _dat
+ * @param {string} _key
+ * @return {Uint8Array}
+ */
+ZgaCrypto.encryptLocal = function(_dat, _key){
+	/** @type {string} */
+	var enc = api.CryptProtectData(_dat, _key, true);
+	return Uint8Array.fromBstr(enc);
+};
+/**
+ * @param {Uint8Array} _dat
+ * @param {string} _key
+ * @return {string}
+ */
+ZgaCrypto.decryptLocal = function(_dat, _key){
+	/** @type {string} */
+	var dat = _dat.toBstr();
+	/** @type {string} */
+	var dec = api.CryptUnprotectData(dat, _key, true);
+	return dec;
+};
+
+/**
  * @typedef
  * {{
  *    _pwd: (string|undefined),
@@ -193,28 +218,73 @@ ZgaCrypto.deriveSecrets = function(_pwdkey){
 };
 
 /**
- * Only the same user on the same computer who encrypted the data can decrypt the data.
- *
- * @param {string} _dat
- * @param {string} _key
- * @return {Uint8Array}
+ * @typedef
+ * {{
+ *    _str: string,
+ *    _tag: (string|undefined),
+ * }}
  */
-ZgaCrypto.encryptLocal = function(_dat, _key){
-	/** @type {string} */
-	var enc = api.CryptProtectData(_dat, _key, true);
-	return Uint8Array.fromBstr(enc);
-};
+var CryptoStringOutput;
 /**
- * @param {Uint8Array} _dat
- * @param {string} _key
- * @return {string}
+ * @param {boolean} _encflg
+ * @param {string|CryptoStringOutput} _in
+ * @param {string|CryptoSecrets} _pwd
+ * @param {string=} _algo
+ * @return {CryptoStringOutput}
  */
-ZgaCrypto.decryptLocal = function(_dat, _key){
+ZgaCrypto.cryptString = function(_encflg, _in, _pwd, _algo){
 	/** @type {string} */
-	var dat = _dat.toBstr();
+	var str = _in._str || /** @type {string} */(_in);
+	if(_encflg){
+		str = forge.util.encodeUtf8(str);
+	}
 	/** @type {string} */
-	var dec = api.CryptUnprotectData(dat, _key, true);
-	return dec;
+	var algo = _algo || "AES-CBC";
+	/** @type {CryptoSecrets|null} */
+	var tscs = null;
+	if(typeof _pwd == "string"){
+		tscs = ZgaCrypto.deriveSecrets({
+			_pwd: _pwd,
+		});
+	}else{
+		tscs = _pwd;
+	}
+
+	/** @type {CipherOptions} */
+	var opts = {
+		iv: tscs._iv
+	};
+	if(algo == "AES-GCM"){
+		opts = {
+			iv: tscs._iv.substring(0, 12),
+			additionalData: tscs._iv.substring(12),
+		};
+		if(!_encflg){
+			opts.tag = _in._tag;
+		}
+	}
+
+	/** @type {forge.util.ByteBuffer} */
+	var trky = new forge.util.ByteBuffer(tscs._key);
+	/** @type {forge.cipher.BlockCipher} */
+	var tr = _encflg ? forge.cipher.createCipher(algo, trky) : forge.cipher.createDecipher(algo, trky);
+	tr.start(opts);
+	/** @type {forge.util.ByteBuffer} */
+	var wdat = new forge.util.ByteBuffer(str);
+	tr.update(wdat);
+	tr.finish();
+	/** @type {CryptoStringOutput} */
+	var ret = {
+		_str: tr.output.getBytes(),
+	};
+	if(_encflg){
+		if(algo == "AES-GCM"){
+			ret._tag = tr.mode.tag.getBytes();
+		}
+	}else{
+		ret._str = forge.util.decodeUtf8(ret._str);
+	}
+	return ret;
 };
 
 /**

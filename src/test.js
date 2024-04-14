@@ -197,9 +197,24 @@ window.test = function(_typ){
 			/** @type {string} */
 			var dstr = ZgaCrypto.decryptLocal(u8enc, "abcd");
 			if(ostr != dstr){
-				throw new Error("Assert failed to encrypt and decrypt.");
+				throw new Error("Assert failed to encrypt and decrypt for local.");
 			}
 			alert("Test local encryption and decryption OK. "+ostr.length+":"+u8enc.length);
+
+			/** @type {CryptoSecrets} */
+			var tscs = ZgaCrypto.deriveSecrets({
+				_pwd: "abcd,1234",
+			});
+			["AES-ECB","AES-CBC","AES-CFB","AES-OFB","AES-CTR","AES-GCM"].forEach(function(a_alog){
+				/** @type {CryptoStringOutput} */
+				var a_encdat = ZgaCrypto.cryptString(true, ostr, tscs, a_alog);
+				/** @type {CryptoStringOutput} */
+				var a_decdat = ZgaCrypto.cryptString(false, a_encdat, tscs, a_alog);
+				if(ostr != a_decdat._str){
+					throw new Error("Assert failed to encrypt and decrypt for " + a_alog);
+				}
+			});
+			alert("Test encryption and decryption OK.");
 
 			/** @const {!Object<string, Array<string>>} */
 			var testsdat = {
