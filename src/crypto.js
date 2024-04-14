@@ -60,6 +60,16 @@ ZgaCrypto.initCryptoEnv = function(forgepath){
 /**
  * @typedef
  * {{
+ *    _pwd: (string|undefined),
+ *    _keyfs: (Array<string>|undefined),
+ *    _default: (number|undefined),
+ * }}
+ * _default: 0 no default, 1 load default secrets, 2 save as default.
+ */
+var CryptoPwdKey;
+/**
+ * @typedef
+ * {{
  *    _key: string,
  *    _iv: string,
  * }}
@@ -67,28 +77,119 @@ ZgaCrypto.initCryptoEnv = function(forgepath){
 var CryptoSecrets;
 
 /**
- * @param {string} _pwd
- * @param {string=} _salt
+ * @param {CryptoPwdKey} _pwdkey
  * @return {CryptoSecrets}
  */
-ZgaCrypto.deriveSecrets = function(_pwd, _salt){
+ZgaCrypto.deriveSecrets = function(_pwdkey){
+	if(_pwdkey._default == 1){
+		//TODO load default secrets
+		return {
+			_key: "some key",
+			_iv: "some iv"
+		};
+	}
+
+	/**
+	 * @param {string} _keyf
+	 * @return {string}
+	 */
+	var loadKey = function(_keyf){
+		if(_keyf.substring(0, 8) == "https://"){
+			/** @type {XMLHttpRequest} */
+			var xhr = createHttpRequest();
+			xhr.open("GET", _keyf, false);
+			xhr.send(null);
+			if(xhr.status >= 200 && xhr.status <= 299){
+				return xhr.responseText;
+			}else{
+				throw new Error("Failed to load key file. " + xhr.status + "\n" + _keyf);
+			}
+
+		}else if(fso.FileExists(_keyf)){
+			/** @type {FolderItem} */
+			var fi = fso.GetFile(_keyf);
+			/** @type {ZgaCrypto.BinReader} */
+			var kdr = new ZgaCrypto.BinReader(fi);
+			/** @type {Uint8Array} */
+			var u8arr = kdr.readAll();
+			return u8arr.toRaw();
+		}else{
+			throw new Error("Can't load key file.\n" + _keyf);
+		}
+	};
+	/**
+	 * @param {string} _k1
+	 * @param {string} _k2
+	 * @return {number}
+	 */
+	var compareKeyf = function(_k1, _k2){
+		if(_k1.toLowerCase() < _k2.toLowerCase()){
+			return -1;
+		}else{
+			return 1;
+		}
+	};
+
+	// Generate password and salt.
+	/** @type {string} */
+	var pwd = "";
+	/** @type {string} */
+	var salt = "";
+	if(_pwdkey._keyfs && _pwdkey._keyfs.length){
+		_pwdkey._keyfs.sort(compareKeyf);
+		/** @type {forge.md.digest} */
+		var md = forge.md.sha256.create();
+		/** @type {number} */
+		var i = 0;
+		/** @type {string} */
+		var lastKey = "";
+		while(i < _pwdkey._keyfs.length){
+			if(_pwdkey._keyfs[i] && _pwdkey._keyfs[i] != lastKey){
+				lastKey = _pwdkey._keyfs[i];
+				md.update(loadKey(lastKey));
+			}
+			i++;
+		}
+		if(lastKey){
+			pwd = md.digest().getBytes();
+			if(_pwdkey._pwd){
+				salt = _pwdkey._pwd;
+			}
+		}
+	}
+	if(!pwd){
+		if(_pwdkey._pwd){
+			pwd = _pwdkey._pwd;
+		}else{
+			throw new Error("No password nor key file specified.");
+		}
+	}
+
+	// Derive secrets by password and salt.
 	/** @const {number} */
 	const _keySize = 256 / 8;
 	/** @const {number} */
 	const _ivSize = 128 / 8;
-	if(!_salt){
+	if(!salt){
 		/** @type {forge.md.digest} */
-		var md = forge.md.sha512.create();
-		md.update(_pwd);
-		_salt = md.digest().getBytes();
+		var md2 = forge.md.sha512.create();
+		md2.update(pwd);
+		salt = md2.digest().getBytes();
 	}
-
 	/** @type {string} */
-	var srtstr = forge.pbkdf2(_pwd, _salt, 10000, _keySize + _ivSize, "sha256");
-	return {
+	var srtstr = forge.pbkdf2(pwd, salt, 10000, _keySize + _ivSize, "sha256");
+	/** @type {CryptoSecrets} */
+	var ret = {
 		_key: srtstr.substring(0, _keySize),
 		_iv: srtstr.substring(_keySize),
 	};
+
+	if(_pwdkey._default == 2){
+		//TODO save secrets as default.
+		var TODO = 0;
+	}
+
+	return ret;
 };
 
 /**
@@ -121,8 +222,7 @@ ZgaCrypto.decryptLocal = function(_dat, _key){
  * {{
  *    _encrypt: (boolean|undefined),
  *    _algorithm: (string|undefined),
- *    _pwd: (string|undefined),
- *    _keyfs: (Array<string>|undefined),
+ *    _secrets: (CryptoSecrets),
  *    _outext: (string|undefined),
  * }}
  */
@@ -158,7 +258,7 @@ ZgaCrypto.FilesCryptor = function(_fis, _opt){
 	this.wtr = null;
 
 	/** @private @type {CryptoSecrets} */
-	this.scs = this.deriveSecrets(_opt._pwd, _opt._keyfs);
+	this.scs = _opt._secrets;
 	/** @private @type {forge.cipher.BlockCipher} */
 	this.cryptor = null;
 };
@@ -290,61 +390,6 @@ ZgaCrypto.FilesCryptor.prototype.consume = function(_u8, _final){
 	var ret3 = Uint8Array.fromRaw(ret2);
 	this.wtr.write(ret3);
 };
-/**
- * @private
- * @param {string=} _pwd
- * @param {Array<string>=} _keyfs
- * @return {CryptoSecrets}
- */
-ZgaCrypto.FilesCryptor.prototype.deriveSecrets = function(_pwd, _keyfs){
-	/** @type {string} */
-	var key = "";
-	if(_keyfs && _keyfs.length){
-		/** @type {forge.md.digest} */
-		var md = forge.md.sha256.create();
-		/** @type {number} */
-		var i = 0;
-		while(i < _keyfs.length){
-			md.update(this.loadKey(_keyfs[i]));
-			i++;
-		}
-		key = md.digest().getBytes();
-		return ZgaCrypto.deriveSecrets(key, _pwd);
-	}else if(_pwd){
-		return ZgaCrypto.deriveSecrets(_pwd);
-	}else{
-		throw new Error("No password nor key file specified.");
-	}
-};
-/**
- * @private
- * @param {string} _keyf
- * @return {string}
- */
-ZgaCrypto.FilesCryptor.prototype.loadKey = function(_keyf){
-	if(_keyf.substring(0, 8) == "https://"){
-		/** @type {XMLHttpRequest} */
-		var xhr = createHttpRequest();
-		xhr.open("GET", _keyf, false);
-		xhr.send(null);
-		if(xhr.status >= 200 && xhr.status <= 299){
-			return xhr.responseText;
-		}else{
-			throw new Error("Failed to load key file. " + xhr.status + "\n" + _keyf);
-		}
-
-	}else if(fso.FileExists(_keyf)){
-		/** @type {FolderItem} */
-		var fi = fso.GetFile(_keyf);
-		/** @type {ZgaCrypto.BinReader} */
-		var kdr = new ZgaCrypto.BinReader(fi);
-		/** @type {Uint8Array} */
-		var u8arr = kdr.readAll();
-		return u8arr.toRaw();
-	}else{
-		throw new Error("Can't load key file.\n" + _keyf);
-	}
-};
 
 /**
  * @constructor
@@ -428,4 +473,97 @@ ZgaCrypto.FilesHasher.prototype.step = function(){
 			this.dispose();
 		}
 	}
+};
+
+/**
+ * @param {function(CryptoPwdKey)} _func A callback function
+ * @param {boolean} _hasDefault
+ * @param {number} _pwdTyp 0 no password, 1 password no confirm, 2 password with confirm
+ * @param {boolean=} _hasKey
+ */
+ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
+	/** @type {TablacusControl} */
+	var c = ShowDialog(fso.BuildPath(ZgaCrypto.SRCDIR, "askpwd.html"), {
+		MainWindow: MainWindow,
+		Modal: true,
+		width: 500,
+		height: 320,
+	});
+	AddEventEx(c.Window, "load", function(_evt){
+		var doc = /** @type {Document} */(_evt.target);
+		/**
+		 * @param {boolean=} chkd
+		 */
+		var changeDefault = function(chkd){
+			if(chkd){
+				doc.getElementById("trSave").style.display = "none";
+				doc.getElementById("trPwd").style.display = "none";
+				doc.getElementById("trPwd2").style.display = "none";
+				doc.getElementById("trKeyf").style.display = "none";
+			}else{
+				if(_hasDefault){
+					doc.getElementById("trDefault").style.display = "";
+					if(_pwdTyp == 2 && _hasKey){
+						doc.getElementById("trSave").style.display = "";
+					}
+				}
+				switch(_pwdTyp){
+					case 2:
+						doc.getElementById("trPwd2").style.display = "";
+					case 1:
+						doc.getElementById("trPwd").style.display = "";
+						break;
+				}
+				if(_hasKey){
+					doc.getElementById("trKeyf").style.display = "";
+				}
+			}
+		};
+		AddEventEx(doc.getElementById("btnCancel"), "click", function(){
+			c.Window.close();
+		});
+		AddEventEx(doc.getElementById("btnOk"), "click", function(){
+			/** @type {CryptoPwdKey} */
+			var cpk = {};
+			if(_hasDefault && doc.getElementById("chkDefault").checked){
+				cpk._default = 1;
+			}else if(_pwdTyp == 2 && doc.getElementById("Password").value != doc.getElementById("Password2").value){
+				alert("Password is not same.");
+				return;
+			}else{
+				if(_pwdTyp && doc.getElementById("Password").value){
+					cpk._pwd = doc.getElementById("Password").value;
+				}
+				if(_hasKey && doc.getElementById("Keyfile").value){
+					cpk._keyfs = doc.getElementById("Keyfile").value.split("\n");
+				}
+				if(_hasDefault && _pwdTyp == 2 && _hasKey && doc.getElementById("chkSave").checked){
+					cpk._default = 2;
+				}
+			}
+			c.Window.close();
+			if(_func){
+				_func(cpk);
+			}
+		});
+		AddEventEx(doc.getElementById("btnFiles"), "click", function(){
+			var commdlg = /** @type {CommonDialog} */(api.CreateObject("CommonDialog"));
+			commdlg.Filter = MakeCommDlgFilter("*.*");
+			commdlg.Flags = OFN_FILEMUSTEXIST;
+			if(commdlg.ShowOpen()){
+				/** @type {string} */
+				var fnm = commdlg.FileName;
+				/** @type {number} */
+				var i = fnm.indexOf(String.fromCharCode(0));
+				if(i >= 0){
+					fnm = fnm.substring(0, i);
+				}
+				doc.getElementById("Keyfile").value += fnm + "\n";
+			}
+		});
+		AddEventEx(doc.getElementById("chkDefault"), "change", function(evt2){
+			changeDefault(evt2.target.checked);
+		});
+		changeDefault();
+	});
 };

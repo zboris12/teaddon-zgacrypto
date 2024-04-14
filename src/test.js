@@ -1,4 +1,7 @@
-window.test = function(){
+/**
+ * @param {number} _typ
+ */
+window.test = function(_typ){
 	/**
 	 * @param {FolderItem} fil
 	 * @return {string}
@@ -44,6 +47,24 @@ window.test = function(){
 	}
 
 	/**
+	 * @param {Array<FolderItem>} fiarr
+	 * @param {CryptoPwdKey} pwdkey
+	 * @param {boolean} encflg
+	 */
+	function cryptfs(fiarr, pwdkey, encflg){
+		/** @type {CryptoSecrets} */
+		var fscs = ZgaCrypto.deriveSecrets(pwdkey);
+		/** @type {ZgaCrypto.FilesCryptor} */
+		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, {
+			_algorithm: "AES-ECB",
+			_encrypt: encflg,
+			_outext: encflg ? undefined : "-",
+			_secrets: fscs,
+		});
+		fcptr.open();
+	}
+
+	/**
 	 * @constructor
 	 * @param {Folder} wkfdr
 	 * @extends {ZgaCrypto.ProgessBar}
@@ -59,7 +80,9 @@ window.test = function(){
 		this.wtr = null;
 
 		/** @private @type {CryptoSecrets} */
-		this.scs = ZgaCrypto.deriveSecrets("abcd", "1234");
+		this.scs = ZgaCrypto.deriveSecrets({
+			_pwd: "abcd,1234",
+		});
 		/** @private @type {forge.cipher.BlockCipher} */
 		this.cryptor = null;
 	}
@@ -161,82 +184,90 @@ window.test = function(){
 
 	try{
 		/** @type {string} */
-		var ostr = "あいうえお"+String.fromCharCode(0)+String.fromCharCode(1);
-		/** @type {Uint8Array} */
-		var u8enc = ZgaCrypto.encryptLocal(ostr, "abcd");
-		/** @type {string} */
-		var dstr = ZgaCrypto.decryptLocal(u8enc, "abcd");
-		if(ostr != dstr){
-			throw new Error("Assert failed to encrypt and decrypt.");
-		}
-		alert("Test local encryption and decryption OK. "+ostr.length+":"+u8enc.length);
-
-		/** @const {!Object<string, Array<string>>} */
-		var testsdat = {
-			"be.txt": ["/v8AYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBu", "2ff63903df02e12bb55cf95a47a64f5e"],
-			"le.txt": ["//5hAGIAYwBkAGUAZgBnAGgAaQBqAGsAbABtAG4A", "0e441ea6d3e964819e6328a4db6153f1"],
-			"nobom.txt": ["YWJjZGVmZ2hpamtsbW4=", "0845a5972cd9ad4a46bad66f1253581f"],
-			"odd_be.txt": ["/v8AYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBuoQ==", "6050486095a81cf56d9e301fe36bf786"],
-			"odd_le.txt": ["//5hAGIAYwBkAGUAZgBnAGgAaQBqAGsAbABtAG4AoA==", "d017a2bc551e89ddc7e7f2394bd332ba"],
-			"odd_nobom.txt": ["YWJjZGVmZ2hpamtsbW4y", "d410577fa87e5ea07455c3a1531eb66c"],
-		};
-
-		/** @type {string} */
 		var wkf = fso.BuildPath(fso.GetParentFolderName(ZgaCrypto.SRCDIR), "test");
 		if(!ZgaCrypto.initCryptoEnv(fso.BuildPath(wkf, "forge.min.js"))){
 			return;
 		}
 
-		//Test for write binary.
-		Object.keys(testsdat).forEach(function(key){
-			wrtf(fso.BuildPath(wkf, key), testsdat[key][0]);
-		});
-
-		//Test for read binary.
-		/** @type {Folder} */
-		var wkfdr = sha.NameSpace(wkf);
-		Object.keys(testsdat).forEach(function(key){
-			var val = md5(wkfdr.ParseName(key));
-			if(val != testsdat[key][1]){
-				throw new Error("Assert failed to calculate md5 of " + key);
+		if(_typ == 1){
+			/** @type {string} */
+			var ostr = "あいうえお"+String.fromCharCode(0)+String.fromCharCode(1);
+			/** @type {Uint8Array} */
+			var u8enc = ZgaCrypto.encryptLocal(ostr, "abcd");
+			/** @type {string} */
+			var dstr = ZgaCrypto.decryptLocal(u8enc, "abcd");
+			if(ostr != dstr){
+				throw new Error("Assert failed to encrypt and decrypt.");
 			}
-		});
+			alert("Test local encryption and decryption OK. "+ostr.length+":"+u8enc.length);
 
-		alert("Test read and write OK.");
+			/** @const {!Object<string, Array<string>>} */
+			var testsdat = {
+				"be.txt": ["/v8AYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBu", "2ff63903df02e12bb55cf95a47a64f5e"],
+				"le.txt": ["//5hAGIAYwBkAGUAZgBnAGgAaQBqAGsAbABtAG4A", "0e441ea6d3e964819e6328a4db6153f1"],
+				"nobom.txt": ["YWJjZGVmZ2hpamtsbW4=", "0845a5972cd9ad4a46bad66f1253581f"],
+				"odd_be.txt": ["/v8AYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBuoQ==", "6050486095a81cf56d9e301fe36bf786"],
+				"odd_le.txt": ["//5hAGIAYwBkAGUAZgBnAGgAaQBqAGsAbABtAG4AoA==", "d017a2bc551e89ddc7e7f2394bd332ba"],
+				"odd_nobom.txt": ["YWJjZGVmZ2hpamtsbW4y", "d410577fa87e5ea07455c3a1531eb66c"],
+			};
 
-		// /** @type {TestRun} */
-		// var trun = new TestRun(wkfdr);
-		// trun.open(2);
+			//Test for write binary.
+			Object.keys(testsdat).forEach(function(key){
+				wrtf(fso.BuildPath(wkf, key), testsdat[key][0]);
+			});
 
-		/** @type {FolderView} */
-		var FV = GetFolderView();
-		/** @type {FolderItems} */
-		var Selected = FV.SelectedItems();
-		/** @type {Array<FolderItem>} */
-		var fiarr = new Array();
-		for(var i=0; i<Selected.Count; i++){
-			if(fso.FileExists(Selected.Item(i).Path)){
-				fiarr.push(Selected.Item(i));
+			//Test for read binary.
+			/** @type {Folder} */
+			var wkfdr = sha.NameSpace(wkf);
+			Object.keys(testsdat).forEach(function(key){
+				var val = md5(wkfdr.ParseName(key));
+				if(val != testsdat[key][1]){
+					throw new Error("Assert failed to calculate md5 of " + key);
+				}
+			});
+
+			alert("Test read and write OK.");
+
+			/** @type {TestRun} */
+			var trun = new TestRun(wkfdr);
+			trun.open(2);
+
+		}else{
+			/** @type {FolderView} */
+			var FV = GetFolderView();
+			/** @type {FolderItems} */
+			var Selected = FV.SelectedItems();
+			/** @type {Array<FolderItem>} */
+			var fiarr = new Array();
+			for(var i=0; i<Selected.Count; i++){
+				if(fso.FileExists(Selected.Item(i).Path)){
+					fiarr.push(Selected.Item(i));
+				}
+			}
+			if(fiarr.length == 0){
+				throw new Error("No files selected.");
+			}
+
+			if(_typ == 2 || _typ == 3){
+				cryptfs(fiarr, {
+					_pwd: "abcd",
+					_keyfs: [
+						fso.BuildPath(wkf, "key1.jpg"),
+						"https://cdn.jsdelivr.net/npm/node-forge@1.3.1/lib/index.min.js"
+					],
+				}, _typ == 2);
+
+			}else if(_typ == 4){
+				/** @type {ZgaCrypto.FilesHasher} */
+				var fhsr = new ZgaCrypto.FilesHasher(fiarr, "sha256");
+				fhsr.open();
+
+			}else if(_typ == 5 || _typ == 6){
+				ZgaCrypto.askSecrets(function(_pwdkey){
+					cryptfs(fiarr, _pwdkey, _typ == 5);
+				}, true, _typ == 5 ? 2 : 1, true);
 			}
 		}
-		if(fiarr.length == 0){
-			throw new Error("No files selected.");
-		}
-		/** @type {ZgaCrypto.FilesCryptor} */
-		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, {
-			_algorithm: "AES-ECB",
-			_encrypt: true,
-			// _outext: "-",
-			_pwd: "abcd",
-			_keyfs: [
-				fso.BuildPath(wkf, "key1.jpg"),
-				"https://cdn.jsdelivr.net/npm/node-forge@1.3.1/lib/index.min.js"
-			],
-		});
-		fcptr.open();
-		/** @type {ZgaCrypto.FilesHasher} */
-		var fhsr = new ZgaCrypto.FilesHasher(fiarr, "sha256");
-		fhsr.open();
 
 	}catch(ex){
 		alert(ex.stack);
@@ -249,5 +280,5 @@ window.zgacpath = "Path of the project." + "\\dist";
 var jspath = fso.BuildPath(window.zgacpath, "script-dev.js");
 importScript(jspath);
 //run test
-test();
+test(1);
 */

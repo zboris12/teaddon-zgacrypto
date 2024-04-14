@@ -168,3 +168,20 @@ ADOStream.prototype.Write = function(byts){};
  */
 ADOStream.prototype.SaveToFile = function(fnm, opt){};
 ADOStream.prototype.Close = function(){};
+
+/** @const {number} */
+var OFN_FILEMUSTEXIST;
+/** @constructor */
+var CommonDialog = function(){};
+/**
+ * @return {boolean}
+ */
+CommonDialog.prototype.ShowOpen = function(){};
+/** @type {string} */
+CommonDialog.prototype.FileName;
+/** @type {string} */
+CommonDialog.prototype.Filter;
+/** @type {number} */
+CommonDialog.prototype.Flags;
+
+

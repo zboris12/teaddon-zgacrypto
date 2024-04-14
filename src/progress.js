@@ -25,7 +25,7 @@ ZgaCrypto.ProgessBar = function(){
 	/** @private @type {number} */
 	this.oldels = 0;
 	/** @private @type {string} */
-	this.oldelstr = "";
+	this.oldelstr = "00:00";
 	/** @private @type {boolean} */
 	this.closed = false;
 };

@@ -1,0 +1,83 @@
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="MSThemeCompatible" content="Yes">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>ZgaCrypto</title>
+    <link rel="stylesheet" type="text/css" href="../../script/index.css">
+    <style type="text/css">
+    .panel {
+      border: 1px solid #898C95;
+      overflow-y: auto;
+      width: calc(100% - 10px);
+      margin: 5px;
+    }
+    .footer {
+      width: 100%;
+      line-height: 1.5em;
+    }
+    .cell {
+      vertical-align: middle;
+      border: 1px solid #898C95;
+      padding: 5px;
+      white-space: break-spaces;
+    }
+    .w-full {
+      width: 100%;
+    }
+    .pd15 {
+      padding-left: 15px;
+    }
+	textarea {
+	  margin-left: 15px;
+	  margin-top: 5px;
+	  display: block;
+	  width: calc(100% - 15px);
+	}
+    </style>
+    <script language="javascript">
+    </script>
+  </head>
+  <body>
+    <table class="panel"><tbody>
+    <tr id="trDefault" style="display: none;">
+      <td class="cell pd15" colspan="2">
+        <input id="chkDefault" type="checkbox" />
+        <label for="chkDefault">Use my default secrets.</label>
+      </td>
+    </tr>
+    <tr id="trPwd" style="display: none;">
+      <td class="cell" width="200px">Please input password.</td>
+      <td class="cell"><input class="w-full" id="Password" type="password" /></td>
+    </tr>
+    <tr id="trPwd2" style="display: none;">
+      <td class="cell">Please input password again.</td>
+      <td class="cell" ><input class="w-full" id="Password2" type="password" /></td>
+    </tr>
+    <tr id="trKeyf" style="display: none;">
+      <td class="cell" colspan="2">
+        <label for="Keyfile">Please specify key files.</label>
+        <input type="button" id="btnFiles" value="..." />
+        <textarea id="Keyfile" rows="3" placeholder="https://aaa.com/a.jpg&#13;https://bbb.com/b.jpg"></textarea>
+      </td>
+    </tr>
+    <tr id="trSave" style="display: none;">
+      <td class="cell pd15" colspan="2">
+        <input id="chkSave" type="checkbox" />
+        <label for="chkSave">Save as my default secrets.</label>
+      </td>
+    </tr>
+    </tbody></table>
+    <table id="buttons" class="footer">
+      <tr>
+        <td id="Selected" style="text-align: right; width: 100%; white-space: nowrap"></td>
+        <td class="buttons">
+          <input id="btnOk" type="button" value="OK" class="ok" />
+        </td>
+        <td class="buttons">
+          <input id="btnCancel" type="button" value="Cancel" class="cancel" />
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

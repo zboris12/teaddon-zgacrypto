@@ -44,7 +44,7 @@ api.WaitForSingleObject = function(hdl, msec){};
 api.CloseHandle = function(hdl){};
 /**
  * @param {string} nm
- * @return {ADOStream}
+ * @return {ADOStream|CommonDialog}
  */
 api.CreateObject = function(nm){};
 /**
@@ -160,3 +160,8 @@ var importScript = function(path){};
  * @return {XMLHttpRequest}
  */
 var createHttpRequest = function(){};
+/**
+ * @param {string} ft
+ * @return {string}
+ */
+var MakeCommDlgFilter = function(ft){};

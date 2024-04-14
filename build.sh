@@ -106,6 +106,7 @@ then
 			fi
 		fi
 	done <<EOF2
+askpwd.html
 progressbar.html
 EOF2
 
