@@ -217,29 +217,26 @@ ZgaCrypto.deriveSecrets = function(_pwdkey){
 	return ret;
 };
 
-/**
- * @typedef
- * {{
- *    _str: string,
- *    _tag: (string|undefined),
- * }}
- */
-var CryptoStringOutput;
+/** @const {Array<string>} */
+ZgaCrypto.ALGORITHMS = ["AES-ECB","AES-CBC","AES-CFB","AES-OFB","AES-CTR","AES-GCM"];
+/** @const {number} */
+ZgaCrypto.AESCBC = 1;
+/** @const {number} */
+ZgaCrypto.AESGCM = 5;
+
 /**
  * @param {boolean} _encflg
- * @param {string|CryptoStringOutput} _in
+ * @param {string} _in
  * @param {string|CryptoSecrets} _pwd
- * @param {string=} _algo
- * @return {CryptoStringOutput}
+ * @param {number=} _algo
+ * @return {string}
  */
 ZgaCrypto.cryptString = function(_encflg, _in, _pwd, _algo){
-	/** @type {string} */
-	var str = _in._str || /** @type {string} */(_in);
 	if(_encflg){
-		str = forge.util.encodeUtf8(str);
+		_in = forge.util.encodeUtf8(_in);
 	}
-	/** @type {string} */
-	var algo = _algo || "AES-CBC";
+	/** @type {number} */
+	var algo = _algo >= 0 ? _algo : ZgaCrypto.AESCBC;
 	/** @type {CryptoSecrets|null} */
 	var tscs = null;
 	if(typeof _pwd == "string"){
@@ -254,35 +251,38 @@ ZgaCrypto.cryptString = function(_encflg, _in, _pwd, _algo){
 	var opts = {
 		iv: tscs._iv
 	};
-	if(algo == "AES-GCM"){
+	if(algo == ZgaCrypto.AESGCM){
 		opts = {
 			iv: tscs._iv.substring(0, 12),
 			additionalData: tscs._iv.substring(12),
 		};
 		if(!_encflg){
-			opts.tag = _in._tag;
+			/** @type {number} */
+			var taglen = _in.charCodeAt(0);
+			opts.tag = _in.substring(1, taglen + 1);
+			_in = _in.substring(taglen + 1);
 		}
 	}
 
 	/** @type {forge.util.ByteBuffer} */
 	var trky = new forge.util.ByteBuffer(tscs._key);
 	/** @type {forge.cipher.BlockCipher} */
-	var tr = _encflg ? forge.cipher.createCipher(algo, trky) : forge.cipher.createDecipher(algo, trky);
+	var tr = _encflg ? forge.cipher.createCipher(ZgaCrypto.ALGORITHMS[algo], trky) : forge.cipher.createDecipher(ZgaCrypto.ALGORITHMS[algo], trky);
 	tr.start(opts);
 	/** @type {forge.util.ByteBuffer} */
-	var wdat = new forge.util.ByteBuffer(str);
+	var wdat = new forge.util.ByteBuffer(_in);
 	tr.update(wdat);
 	tr.finish();
-	/** @type {CryptoStringOutput} */
-	var ret = {
-		_str: tr.output.getBytes(),
-	};
+	/** @type {string} */
+	var ret = tr.output.getBytes();
 	if(_encflg){
-		if(algo == "AES-GCM"){
-			ret._tag = tr.mode.tag.getBytes();
+		if(algo == ZgaCrypto.AESGCM){
+			/** @type {string} */
+			var tag = tr.mode.tag.getBytes();
+			ret = String.fromCharCode(tag.length) + tag + ret;
 		}
 	}else{
-		ret._str = forge.util.decodeUtf8(ret._str);
+		ret = forge.util.decodeUtf8(ret);
 	}
 	return ret;
 };
@@ -291,7 +291,7 @@ ZgaCrypto.cryptString = function(_encflg, _in, _pwd, _algo){
  * @typedef
  * {{
  *    _encrypt: (boolean|undefined),
- *    _algorithm: (string|undefined),
+ *    _algorithm: (number|undefined),
  *    _secrets: (CryptoSecrets),
  *    _outext: (string|undefined),
  * }}
@@ -308,12 +308,8 @@ ZgaCrypto.FilesCryptor = function(_fis, _opt){
 	this.super();
 	/** @private @type {boolean} */
 	this.enc = _opt._encrypt || false;
-	/**
-	 * @private
-	 * @type {string}
-	 * valid values are "AES-ECB","AES-CBC","AES-CFB","AES-OFB","AES-CTR","AES-GCM"
-	 */
-	this.algo = _opt._algorithm || "AES-CBC";
+	/** @private @type {number} */
+	this.algo = _opt._algorithm >= 0 ? _opt._algorithm : ZgaCrypto.AESCBC;
 	/**
 	 * @private
 	 * @type {string}
@@ -331,6 +327,8 @@ ZgaCrypto.FilesCryptor = function(_fis, _opt){
 	this.scs = _opt._secrets;
 	/** @private @type {forge.cipher.BlockCipher} */
 	this.cryptor = null;
+	/** @private @type {string} */
+	this.tagpath = "";
 };
 ZgaCrypto.FilesCryptor.inherit(ZgaCrypto.ProgessBar);
 /**
@@ -365,16 +363,34 @@ ZgaCrypto.FilesCryptor.prototype.dispose = function(){
 ZgaCrypto.FilesCryptor.prototype.prepareHdStep = function(){
 	/** @type {FolderItem} */
 	var fi = this.fis[this.hdStep];
+	/** @type {string} */
+	var op = this.getOutPath(fi.Path);
 	this.rdr = new ZgaCrypto.BinReader(fi);
-	this.wtr = new ZgaCrypto.BinWriter(this.getOutPath(fi.Path));
+	this.wtr = new ZgaCrypto.BinWriter(op);
+	/** @type {CipherOptions} */
+	var opts = {
+		iv: this.scs._iv
+	};
+	if(this.algo == ZgaCrypto.AESGCM){
+		opts = {
+			iv: this.scs._iv.substring(0, 12),
+			additionalData: this.scs._iv.substring(12),
+		};
+		if(this.enc){
+			this.tagpath = op + ".tag";
+		}else{
+			opts.tag = this.loadGcmTag(fi.Path);
+		}
+	}
+
 	/** @type {forge.util.ByteBuffer} */
 	var key2 = new forge.util.ByteBuffer(this.scs._key);
 	if(this.enc){
-		this.cryptor = forge.cipher.createCipher(this.algo, key2);
+		this.cryptor = forge.cipher.createCipher(ZgaCrypto.ALGORITHMS[this.algo], key2);
 	}else{
-		this.cryptor = forge.cipher.createDecipher(this.algo, key2);
+		this.cryptor = forge.cipher.createDecipher(ZgaCrypto.ALGORITHMS[this.algo], key2);
 	}
-	this.cryptor.start({iv: this.scs._iv});
+	this.cryptor.start(opts);
 	this.size = fi.Size;
 	this.pos = 0;
 	this.stepForward(0);
@@ -459,6 +475,40 @@ ZgaCrypto.FilesCryptor.prototype.consume = function(_u8, _final){
 	/** @type {Uint8Array} */
 	var ret3 = Uint8Array.fromRaw(ret2);
 	this.wtr.write(ret3);
+	if(_final && this.tagpath){
+		this.saveGcmTag();
+	}
+};
+/**
+ * @private
+ * @param {string} _path
+ * @return {string}
+ */
+ZgaCrypto.FilesCryptor.prototype.loadGcmTag = function(_path){
+	/** @type {string} */
+	var tagp = _path + ".tag";
+	if(!fso.FileExists(tagp)){
+		throw new Error("Need tag file to decrypt. " + tagp);
+	}
+	/** @type {FolderItem} */
+	var ftag = fso.GetFile(tagp);
+	/** @type {ZgaCrypto.BinReader} */
+	var tagdr = new ZgaCrypto.BinReader(ftag);
+	/** @type {Uint8Array} */
+	var u8tag = tagdr.readAll();
+	return u8tag.toRaw();
+};
+/**
+ * @private
+ */
+ZgaCrypto.FilesCryptor.prototype.saveGcmTag = function(){
+	/** @type {string} */
+	var tag = this.cryptor.mode.tag.getBytes();
+	/** @type {ZgaCrypto.BinWriter} */
+	var tagtr = new ZgaCrypto.BinWriter(this.tagpath);
+	tagtr.write(Uint8Array.fromRaw(tag));
+	tagtr.close();
+	this.tagpath = "";
 };
 
 /**
@@ -546,7 +596,7 @@ ZgaCrypto.FilesHasher.prototype.step = function(){
 };
 
 /**
- * @param {function(CryptoPwdKey)} _func A callback function
+ * @param {function(CryptoPwdKey, number)} _func A callback function
  * @param {boolean} _hasDefault
  * @param {number} _pwdTyp 0 no password, 1 password no confirm, 2 password with confirm
  * @param {boolean=} _hasKey
@@ -557,19 +607,42 @@ ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 		MainWindow: MainWindow,
 		Modal: true,
 		width: 500,
-		height: 320,
+		height: 390,
 	});
 	AddEventEx(c.Window, "load", function(_evt){
 		var doc = /** @type {Document} */(_evt.target);
+		/** @type {Element} */
+		var sel = doc.getElementById("Algorithm");
+		ZgaCrypto.ALGORITHMS.forEach(function(a_algo, a_idx){
+			/** @type {Element} */
+			var a_opt = doc.createElement("option");
+			a_opt.value = a_idx;
+			a_opt.innerText = a_algo;
+			if(a_idx == ZgaCrypto.AESCBC){
+				a_opt.selected = true;
+			}
+			sel.appendChild(a_opt);
+		});
+		if(_pwdTyp == 2){
+			AddEventEx(sel, "change", function(evt2){
+				if(evt2.target.value == ZgaCrypto.AESGCM){
+					evt2.target.nextElementSibling.style.display = "block";
+				}else{
+					evt2.target.nextElementSibling.style.display = "none";
+				}
+			});
+		}
+
 		/**
 		 * @param {boolean=} chkd
 		 */
 		var changeDefault = function(chkd){
 			if(chkd){
-				doc.getElementById("trSave").style.display = "none";
+				doc.getElementById("trAlgo").style.display = "none";
 				doc.getElementById("trPwd").style.display = "none";
 				doc.getElementById("trPwd2").style.display = "none";
 				doc.getElementById("trKeyf").style.display = "none";
+				doc.getElementById("trSave").style.display = "none";
 			}else{
 				if(_hasDefault){
 					doc.getElementById("trDefault").style.display = "";
@@ -577,6 +650,7 @@ ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 						doc.getElementById("trSave").style.display = "";
 					}
 				}
+				doc.getElementById("trAlgo").style.display = "";
 				switch(_pwdTyp){
 					case 2:
 						doc.getElementById("trPwd2").style.display = "";
@@ -613,7 +687,7 @@ ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 			}
 			c.Window.close();
 			if(_func){
-				_func(cpk);
+				_func(cpk, doc.getElementById("Algorithm").value);
 			}
 		});
 		AddEventEx(doc.getElementById("btnFiles"), "click", function(){
@@ -631,8 +705,8 @@ ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 				doc.getElementById("Keyfile").value += fnm + "\n";
 			}
 		});
-		AddEventEx(doc.getElementById("chkDefault"), "change", function(evt2){
-			changeDefault(evt2.target.checked);
+		AddEventEx(doc.getElementById("chkDefault"), "change", function(evt3){
+			changeDefault(evt3.target.checked);
 		});
 		changeDefault();
 	});

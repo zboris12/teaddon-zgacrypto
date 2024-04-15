@@ -49,14 +49,15 @@ window.test = function(_typ){
 	/**
 	 * @param {Array<FolderItem>} fiarr
 	 * @param {CryptoPwdKey} pwdkey
+	 * @param {number} algo
 	 * @param {boolean} encflg
 	 */
-	function cryptfs(fiarr, pwdkey, encflg){
+	function cryptfs(fiarr, pwdkey, algo, encflg){
 		/** @type {CryptoSecrets} */
 		var fscs = ZgaCrypto.deriveSecrets(pwdkey);
 		/** @type {ZgaCrypto.FilesCryptor} */
 		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, {
-			_algorithm: "AES-ECB",
+			_algorithm: algo,
 			_encrypt: encflg,
 			_outext: encflg ? undefined : "-",
 			_secrets: fscs,
@@ -205,13 +206,13 @@ window.test = function(_typ){
 			var tscs = ZgaCrypto.deriveSecrets({
 				_pwd: "abcd,1234",
 			});
-			["AES-ECB","AES-CBC","AES-CFB","AES-OFB","AES-CTR","AES-GCM"].forEach(function(a_alog){
-				/** @type {CryptoStringOutput} */
-				var a_encdat = ZgaCrypto.cryptString(true, ostr, tscs, a_alog);
-				/** @type {CryptoStringOutput} */
-				var a_decdat = ZgaCrypto.cryptString(false, a_encdat, tscs, a_alog);
-				if(ostr != a_decdat._str){
-					throw new Error("Assert failed to encrypt and decrypt for " + a_alog);
+			[0,1,2,3,4,5].forEach(function(a_algo){
+				/** @type {string} */
+				var a_encdat = ZgaCrypto.cryptString(true, ostr, tscs, a_algo);
+				/** @type {string} */
+				var a_decdat = ZgaCrypto.cryptString(false, a_encdat, tscs, a_algo);
+				if(ostr != a_decdat){
+					throw new Error("Assert failed to encrypt and decrypt for " + ZgaCrypto.ALGORITHMS[a_algo]);
 				}
 			});
 			alert("Test encryption and decryption OK.");
@@ -270,7 +271,7 @@ window.test = function(_typ){
 						fso.BuildPath(wkf, "key1.jpg"),
 						"https://cdn.jsdelivr.net/npm/node-forge@1.3.1/lib/index.min.js"
 					],
-				}, _typ == 2);
+				}, 0, _typ == 2);
 
 			}else if(_typ == 4){
 				/** @type {ZgaCrypto.FilesHasher} */
@@ -278,8 +279,8 @@ window.test = function(_typ){
 				fhsr.open();
 
 			}else if(_typ == 5 || _typ == 6){
-				ZgaCrypto.askSecrets(function(_pwdkey){
-					cryptfs(fiarr, _pwdkey, _typ == 5);
+				ZgaCrypto.askSecrets(function(_pwdkey, _algo){
+					cryptfs(fiarr, _pwdkey, _algo, _typ == 5);
 				}, true, _typ == 5 ? 2 : 1, true);
 			}
 		}

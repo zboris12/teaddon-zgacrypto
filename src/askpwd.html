@@ -28,12 +28,12 @@
     .pd15 {
       padding-left: 15px;
     }
-	textarea {
-	  margin-left: 15px;
-	  margin-top: 5px;
-	  display: block;
-	  width: calc(100% - 15px);
-	}
+    textarea {
+      margin-left: 15px;
+      margin-top: 5px;
+      display: block;
+      width: calc(100% - 15px);
+    }
     </style>
     <script language="javascript">
     </script>
@@ -46,8 +46,14 @@
         <label for="chkDefault">Use my default secrets.</label>
       </td>
     </tr>
+    <tr id="trAlgo" style="display: none;">
+      <td class="cell" width="200px">Please select an algorithm.</td>
+      <td class="cell"><select id="Algorithm"></select>
+        <span style="display:none;">Note: A .tag file will also be generated. And it is necessary for decryption.</span>
+      </td>
+    </tr>
     <tr id="trPwd" style="display: none;">
-      <td class="cell" width="200px">Please input password.</td>
+      <td class="cell">Please input password.</td>
       <td class="cell"><input class="w-full" id="Password" type="password" /></td>
     </tr>
     <tr id="trPwd2" style="display: none;">
