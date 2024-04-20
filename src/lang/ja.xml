@@ -3,7 +3,13 @@
 	<text s="Encrypt...">暗号化...</text>
 	<text s="Decrypt...">復号化...</text>
 	<text s="Calculate Hash">ハッシュ値の計算</text>
+	<text s="Failed to download %s.">%sはダウンロードできませんでした。</text>
+	<text s="Please download it by yourself and save it to">手動でダウンロードしてここに保存してください。</text>
+	<text s="Failed to load %s.">%sの読込は失敗しました。</text>
+	<text s="Please make sure it has been saved to">ここに置いていることをご確認ください。</text>
 	<text s="Loading...">準備中。。。</text>
+	<text s="Done">完了</text>
+	<text s="Close">閉じる</text>
 	<text s="Use my default secrets.">デフォルトの機密情報を使用する。</text>
 	<text s="Please select an algorithm.">アルゴリズム</text>
 	<text s="Note: A .tag file will also be generated. And it is necessary for decryption.">注：.tagファイルも一緒に生成される。そしてそれは復号化に必要。</text>

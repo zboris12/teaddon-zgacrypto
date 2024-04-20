@@ -43,17 +43,19 @@ ZgaCrypto.initCryptoEnv = function(forgepath){
 			forgepath = ZgaCrypto.getAttribute("forgepath") || fso.BuildPath(ZgaCrypto.SRCDIR, "forge.min.js");
 		}
 		if(!fso.FileExists(forgepath)){
+			/** @const {string} */
+			var forgeurl = ZgaCrypto.getAttribute("forgeurl") || "https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js";
 			/** @type {number} */
-			var hret = api.URLDownloadToFile(null, "https://cdn.jsdelivr.net/npm/node-forge@1.0.0/dist/forge.min.js", forgepath);
+			var hret = api.URLDownloadToFile(null, forgeurl, forgepath);
 			if(hret != 0){
-				alert("Failed to download forge.min.js.\nPlease download it by yourself and save it to\n"+forgepath);
+				alert(forgeurl + "\n" + api.sprintf(100, GetText("Failed to download %s."), "forge.min.js") + "\n" + GetText("Please download it by yourself and save it to") + "\n" + forgepath);
 				return false;
 			}
 		}
 		if(fso.FileExists(forgepath)){
 			importScript(forgepath);
 		}else{
-			alert("Failed to load forge.min.js.\nPlease make sure it has been saved to\n"+forgepath);
+			alert(api.sprintf(100, GetText("Failed to load %s."), "forge.min.js") + "\n" + GetText("Please make sure it has been saved to") + "\n" + forgepath);
 			return false;
 		}
 	}

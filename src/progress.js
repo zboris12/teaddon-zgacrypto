@@ -97,8 +97,8 @@ ZgaCrypto.ProgessBar.prototype.hdStepForward = function(){
 		return false;
 	}else{
 		this.stopLoop();
-		this.getElement("tdHeader").innerHTML = "Done";
-		this.getElement("btnCancel").value = "Close";
+		this.getElement("tdHeader").innerHTML = GetText("Done");
+		this.getElement("btnCancel").value = GetText("Close");
 		return true;
 	}
 };

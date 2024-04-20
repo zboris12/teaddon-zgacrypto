@@ -184,6 +184,10 @@ var AddEventEx = function(w, nm, fn){};
  */
 var ApplyLang = function(doc){};
 /**
+ * @param {...string} p
+ */
+var BuildPath = function(p){};
+/**
  * @return {XMLHttpRequest}
  */
 var createHttpRequest = function(){};

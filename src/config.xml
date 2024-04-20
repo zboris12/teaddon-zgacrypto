@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <TablacusExplorer>
   <General>
-    <Version>1.00</Version>
-    <MinVersion>2021.11.28</MinVersion>
-    <pubDate>Wed, 17 April 2024 00:00:00 GMT</pubDate>
-    <Options>Common:0:0</Options>
+    <Version>0.90</Version>
+    <MinVersion>2020.12.30</MinVersion>
+    <pubDate>Sat, 20 April 2024 00:00:00 GMT</pubDate>
+    <Options>Common:0,7:0</Options>
     <Creator>zboris12</Creator>
     <URL>https://github.com/zboris12/teaddon-zgacrypto</URL>
     <License>MIT License</License>

@@ -226,7 +226,7 @@ var ExecReturn;
 
 const ZgaCrypto = {};
 /** @type {string} */
-ZgaCrypto.SRCDIR = fso.BuildPath(te.Data.Installed, "addons");
+ZgaCrypto.SRCDIR = "";
 /** @type {AddonElement} */
 ZgaCrypto.addon = null;
 /**

@@ -23,7 +23,7 @@ else
 	GCCOPT="${GCCOPT} --compilation_level ADVANCED"
 fi
 GCCEXT="--externs extern/forge.js --externs extern/win.js --externs extern/te.js --externs extern/this.js"
-OUTF="--js_output_file ${OUTFLDR}/script.js"
+OUTF="--js_output_file ${OUTFLDR}/main.js"
 if [ "${MODE}" = "check" ]
 then
 	OUTF="--checks_only"
@@ -111,9 +111,9 @@ then
 				cp -pf "src/${fil}" "${outf}"
 				if [ $? -eq 0 ]
 				then
-					echo "Copied htxml file: ${outf}"
+					echo "Copied file: ${outf}"
 				else
-					echo "Failed copy htxml file: ${outf}"
+					echo "Failed copy file: ${outf}"
 					exit 21
 				fi
 			fi
@@ -122,6 +122,7 @@ then
 !askpwd.html
 !progressbar.html
 config.xml
+script.js
 lang/ja.xml
 EOF2
 

@@ -1,36 +1,11 @@
-/** @const {string} */
-var Addon_Id = "zgacrypto";
-/** @type {AddonElement} */
-var item = GetAddonElement(Addon_Id);
-ZgaCrypto.SRCDIR = fso.BuildPath(ZgaCrypto.SRCDIR, Addon_Id);
-ZgaCrypto.addon = item;
+/**
+ * @param {string} aid
+ * @param {AddonElement} item
+ */
+function initZgaCrypto(aid, item){
+	ZgaCrypto.SRCDIR = BuildPath(te.Data.Installed, "addons", aid);
+	ZgaCrypto.addon = item;
 
-if(!item.getAttribute("forgepath")){
-	item.setAttribute("MenuExec", 1);
-	item.setAttribute("Menu", "Context");
-	item.setAttribute("MenuPos", 1);
-	item.setAttribute("forgepath", fso.BuildPath(ZgaCrypto.SRCDIR, "forge.min.js"));
-	item.setAttribute("algorithm", ZgaCrypto.AESCBC);
-	item.setAttribute("encext", "enc");
-	item.setAttribute("decext", "-");
-}
-if(window.Addon == 1){
-	Addons.ZgaCrypto = {
-		"BinReader": ZgaCrypto.BinReader,
-		"BinWriter": ZgaCrypto.BinWriter,
-		"ProgessBar": ZgaCrypto.ProgessBar,
-		"initCryptoEnv": ZgaCrypto.initCryptoEnv,
-		"encryptLocal": ZgaCrypto.encryptLocal,
-		"decryptLocal": ZgaCrypto.decryptLocal,
-		"deriveSecrets": ZgaCrypto.deriveSecrets,
-		"cryptString": ZgaCrypto.cryptString,
-		"FilesCryptor": ZgaCrypto.FilesCryptor,
-		"FilesHasher": ZgaCrypto.FilesHasher,
-		"askSecrets": ZgaCrypto.askSecrets,
-		"encryptFiles": ZgaCrypto.encryptFiles,
-		"decryptFiles": ZgaCrypto.decryptFiles,
-		"hashFiles": ZgaCrypto.hashFiles,
-	};
 	/** @type {string} */
 	var tenc = GetText("Encrypt...");
 	/** @type {string} */
@@ -70,9 +45,22 @@ if(window.Addon == 1){
 			return nPos;
 		});
 	}
-
-}else if(!window.Addon){
-	//Config mode.
-	SetTabContents(0, "Color",document.getElementById("panel" + 7).innerHTML+'<form name="E" id="data1"><table id="T" style="width: 100%"><tr><td>ak47 aaa.</td></tr></table></form>');
-	document.getElementById("toolbar").innerHTML = '<span>I am hero.</span>';
 }
+
+Addons.ZgaCrypto = {
+	"BinReader": ZgaCrypto.BinReader,
+	"BinWriter": ZgaCrypto.BinWriter,
+	"ProgessBar": ZgaCrypto.ProgessBar,
+	"initCryptoEnv": ZgaCrypto.initCryptoEnv,
+	"encryptLocal": ZgaCrypto.encryptLocal,
+	"decryptLocal": ZgaCrypto.decryptLocal,
+	"deriveSecrets": ZgaCrypto.deriveSecrets,
+	"cryptString": ZgaCrypto.cryptString,
+	"FilesCryptor": ZgaCrypto.FilesCryptor,
+	"FilesHasher": ZgaCrypto.FilesHasher,
+	"askSecrets": ZgaCrypto.askSecrets,
+	"encryptFiles": ZgaCrypto.encryptFiles,
+	"decryptFiles": ZgaCrypto.decryptFiles,
+	"hashFiles": ZgaCrypto.hashFiles,
+	"init": initZgaCrypto,
+};
