@@ -14,6 +14,12 @@ te.Data = {};
 /** @type {string} */
 te.Data.Installed;
 
+/** @type {number} */
+window.Addon;
+var Addons = {};
+/** @type {Array<Function>} */
+var ExtraMenuCommand = [];
+
 /**
  * @constructor
  * @extends {Array}
@@ -26,19 +32,6 @@ CteMemory.prototype.Free = function(flg){};
 
 var api = {};
 /**
- * @param {number} desired
- * @param {boolean} inherit
- * @param {number} prsid
- * @return {number}
- */
-api.OpenProcess = function(desired, inherit, prsid){};
-/**
- * @param {number} hdl
- * @param {number} msec
- * @return {number}
- */
-api.WaitForSingleObject = function(hdl, msec){};
-/**
  * @param {number} hdl
  */
 api.CloseHandle = function(hdl){};
@@ -47,6 +40,31 @@ api.CloseHandle = function(hdl){};
  * @return {ADOStream|CommonDialog}
  */
 api.CreateObject = function(nm){};
+/**
+ * @param {number|string} num
+ * @return {number}
+ */
+api.LowPart = function(num){};
+/**
+ * @param {number} desired
+ * @param {boolean} inherit
+ * @param {number} prsid
+ * @return {number}
+ */
+api.OpenProcess = function(desired, inherit, prsid){};
+/**
+ * @param {number} nSize
+ * @param {string} sFormat
+ * @param {...*} data
+ * @return {string}
+ */
+api.sprintf = function(nSize, sFormat, data){};
+/**
+ * @param {number} hdl
+ * @param {number} msec
+ * @return {number}
+ */
+api.WaitForSingleObject = function(hdl, msec){};
 /**
  * @param {string} lpFileName
  * @param {?number} dwDesiredAccess
@@ -104,6 +122,19 @@ api.CryptUnprotectData = function(dat, key, tostr){};
  * @return {number}
  */
 api.URLDownloadToFile = function(dmy, url, fnm){};
+/**
+ * @return {number}
+ */
+api.CreatePopupMenu = function(){};
+/**
+ * @param {number} hMenu
+ * @param {number} uPosition
+ * @param {number} uFlags
+ * @param {number} uIDNewItem
+ * @param {?string} lpNewItem
+ * @return {boolean}
+ */
+api.InsertMenu = function(hMenu, uPosition, uFlags, uIDNewItem, lpNewItem){};
 
 /** @type {WshScript} */
 var wsh;
@@ -119,6 +150,14 @@ var TablacusControl = function(){};
 /** @type {Window} */
 TablacusControl.prototype.Window;
 /**
+ * @constructor
+ * @extends {Element}
+ */
+var AddonElement = function(){};
+/** @type {boolean} */
+AddonElement.prototype.IsFileSystem;
+
+/**
  * @typedef
  * {{
  *    MainWindow: Window,
@@ -130,22 +169,10 @@ TablacusControl.prototype.Window;
 var DialogOptions;
 
 /**
- * @param {TablacusControl=} Ctrl
- * @param {Object=} pt
- * @return {FolderView}
+ * @param {string} nm
+ * @param {Function} fn
  */
-var GetFolderView = function(Ctrl, pt){};
-/**
- * @param {string} fil
- * @return {ADOStream}
- */
-var OpenAdodbFromTextFile = function(fil){};
-/**
- * @param {string} fn
- * @param {DialogOptions} opt
- * @return {TablacusControl}
- */
-var ShowDialog = function(fn, opt){};
+var AddEvent = function(nm, fn){};
 /**
  * @param {Window|Element} w
  * @param {string} nm
@@ -153,15 +180,51 @@ var ShowDialog = function(fn, opt){};
  */
 var AddEventEx = function(w, nm, fn){};
 /**
- * @param {string} path
+ * @param {Document} doc
  */
-var importScript = function(path){};
+var ApplyLang = function(doc){};
 /**
  * @return {XMLHttpRequest}
  */
 var createHttpRequest = function(){};
 /**
+ * @param {string} id
+ * @return {AddonElement}
+ */
+var GetAddonElement = function(id){};
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ * @return {FolderView}
+ */
+var GetFolderView = function(Ctrl, pt){};
+/**
+ * @param {string} str
+ * @return {string}
+ */
+var GetText = function(str){};
+/**
+ * @param {string} path
+ */
+var importScript = function(path){};
+/**
  * @param {string} ft
  * @return {string}
  */
 var MakeCommDlgFilter = function(ft){};
+/**
+ * @param {string} fil
+ * @return {ADOStream}
+ */
+var OpenAdodbFromTextFile = function(fil){};
+/**
+ * @param {string} evt
+ * @param {string} nm
+ */
+var RunEvent1 = function(evt, nm){};
+/**
+ * @param {string} fn
+ * @param {DialogOptions} opt
+ * @return {TablacusControl}
+ */
+var ShowDialog = function(fn, opt){};

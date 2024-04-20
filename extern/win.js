@@ -170,6 +170,14 @@ ADOStream.prototype.SaveToFile = function(fnm, opt){};
 ADOStream.prototype.Close = function(){};
 
 /** @const {number} */
+var MF_BYPOSITION;
+/** @const {number} */
+var MF_POPUP;
+/** @const {number} */
+var MF_SEPARATOR;
+/** @const {number} */
+var MF_STRING;
+/** @const {number} */
 var OFN_FILEMUSTEXIST;
 /** @constructor */
 var CommonDialog = function(){};

@@ -1,6 +1,7 @@
 /**
  * @abstract
  * @constructor
+ * @implements {IBinFile}
  * @param {string} _fpath
  */
 ZgaCrypto.BinFile = function(_fpath){
@@ -55,6 +56,7 @@ ZgaCrypto.BinFile.prototype.close = function(){
  * @constructor
  * @param {FolderItem} _fitm
  * @extends {ZgaCrypto.BinFile}
+ * @implements {IBinReader}
  */
 ZgaCrypto.BinReader = function(_fitm){
 	this.super(_fitm.Path);
@@ -180,6 +182,7 @@ ZgaCrypto.BinReader.prototype.pushU8Array = function(u8arr, num){
  * @constructor
  * @param {string} _fpath
  * @extends {ZgaCrypto.BinFile}
+ * @implements {IBinWriter}
  */
 ZgaCrypto.BinWriter = function(_fpath){
 	this.super(_fpath);

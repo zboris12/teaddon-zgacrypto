@@ -1,6 +1,7 @@
 if(!Function.prototype.inherit){
 	/**
 	 * @param {Function} ptcls parent class
+	 * @export
 	 */
 	Function.prototype.inherit = function(ptcls){
 		this.super_ = ptcls;
@@ -15,9 +16,7 @@ if(!Function.prototype.inherit){
 			});
 		}else{
 			// old school shim for old browsers
-			/**
-			 * @constructor
-			 */
+			/** @constructor */
 			var tempCtr = function(){};
 			tempCtr.prototype = ptcls.prototype;
 			this.prototype = new tempCtr();
@@ -25,19 +24,32 @@ if(!Function.prototype.inherit){
 		}
 
 		if(!this.prototype.getSuperClass){
+			/**
+			 * @return {*}
+			 * @export
+			 */
 			this.prototype.getSuperClass = function(){
 				return this.constructor.super_;
 			};
 		}
 		if(!this.prototype.super){
-			this.prototype.super = function(){
+			/**
+			 * @param {...*} vars
+			 * @export
+			 */
+			this.prototype.super = function(vars){
 				/** @type {Array} */
 				var args = Array.from(arguments);
 				return this.constructor.super_.apply(this, args);
 			};
 		}
 		if(!this.prototype.superCall){
-			this.prototype.superCall = function(funcnm){
+			/**
+			 * @param {string} funcnm
+			 * @param {...*} vars
+			 * @export
+			 */
+			this.prototype.superCall = function(funcnm, vars){
 				/** @type {Array} */
 				var args = Array.from(arguments);
 				args.shift();
@@ -54,6 +66,7 @@ if(!Array.from){
 	/**
 	 * @param {IArrayLike<T>|Iterable<T>} itr
 	 * @return {Array<R>}
+	 * @export
 	 * @suppress {checkTypes}
 	 */
 	Array.from = function(itr){
@@ -74,6 +87,7 @@ if(!Uint8Array.prototype.slice){
 	 * @param {number} st
 	 * @param {number=} ed
 	 * @return {Uint8Array}
+	 * @export
 	 * @suppress {checkTypes}
 	 */
 	Uint8Array.prototype.slice = function(st, ed){
@@ -103,6 +117,7 @@ if(!Uint8Array.prototype.push){
 	 * @public
 	 * @param {number} num
 	 * @return {Uint8Array}
+	 * @export
 	 */
 	Uint8Array.prototype.push = function(num){
 		/** @type {Uint8Array} */
@@ -118,6 +133,7 @@ if(!Uint8Array.prototype.toRaw){
 	/**
 	 * @public
 	 * @return {string}
+	 * @export
 	 */
 	Uint8Array.prototype.toRaw = function(){
 		/** @type {Uint8Array} */
@@ -137,6 +153,7 @@ if(!Uint8Array.prototype.toBstr){
 	/**
 	 * @public
 	 * @return {string} //BSTR
+	 * @export
 	 */
 	Uint8Array.prototype.toBstr = function(){
 		/** @type {Uint8Array} */
@@ -164,6 +181,7 @@ if(!Uint8Array.fromRaw){
 	/**
 	 * @param {string} raw
 	 * @return {!Uint8Array}
+	 * @export
 	 */
 	Uint8Array.fromRaw = function(raw){
 		/** @type {!Uint8Array} */
@@ -181,6 +199,7 @@ if(!Uint8Array.fromBstr){
 	/**
 	 * @param {string} bstr //BSTR
 	 * @return {!Uint8Array}
+	 * @export
 	 */
 	Uint8Array.fromBstr = function(bstr){
 		/** @type {Uint16Array} */
@@ -206,9 +225,24 @@ if(!Uint8Array.fromBstr){
 var ExecReturn;
 
 const ZgaCrypto = {};
-
 /** @type {string} */
-ZgaCrypto.SRCDIR = window.zgacpath || fso.BuildPath(te.Data.Installed, "addons\\zgacrypto");
+ZgaCrypto.SRCDIR = fso.BuildPath(te.Data.Installed, "addons");
+/** @type {AddonElement} */
+ZgaCrypto.addon = null;
+/**
+ * @param {string} nm
+ * @param {string=} dft
+ * @return {string}
+ */
+ZgaCrypto.getAttribute = function(nm, dft){
+	if(ZgaCrypto.addon && ZgaCrypto.addon.getAttribute(nm)){
+		return ZgaCrypto.addon.getAttribute(nm);
+	}else if(dft){
+		return dft;
+	}else{
+		return "";
+	}
+};
 
 /**
  * @param {string} cmd

@@ -1,5 +1,5 @@
 /**
- * @param {string} forgepath
+ * @param {string=} forgepath
  * @return {boolean}
  */
 ZgaCrypto.initCryptoEnv = function(forgepath){
@@ -39,6 +39,9 @@ ZgaCrypto.initCryptoEnv = function(forgepath){
 	}
 	if(!window.forge){
 		// alert("Load forge.");
+		if(!forgepath){
+			forgepath = ZgaCrypto.getAttribute("forgepath") || fso.BuildPath(ZgaCrypto.SRCDIR, "forge.min.js");
+		}
 		if(!fso.FileExists(forgepath)){
 			/** @type {number} */
 			var hret = api.URLDownloadToFile(null, "https://cdn.jsdelivr.net/npm/node-forge@1.0.0/dist/forge.min.js", forgepath);
@@ -102,16 +105,65 @@ var CryptoPwdKey;
 var CryptoSecrets;
 
 /**
+ * @param {boolean=} forcheck
+ * @return {string}
+ */
+ZgaCrypto.loadDefaultSecrets = function(forcheck){
+	/** @type {string} */
+	var ret = ZgaCrypto.getAttribute("secrets");
+	if(forcheck || !ret){
+		return ret;
+	}
+
+	/** @type {string} */
+	var str = atob(ret);
+	/** @const {number} */
+	const _rkeySize = 9;
+	/** @type {string} */
+	var rndkey = str.substring(0, _rkeySize);
+	str = str.substring(_rkeySize);
+	ret = ZgaCrypto.decryptLocal(Uint8Array.fromRaw(str), rndkey);
+	return ret;
+};
+/**
+ * @param {string} str
+ */
+ZgaCrypto.saveDefaultSecrets = function(str){
+	if(ZgaCrypto.addon){
+		/** @type {HTMLCollection} */
+		var xmlitms = te.Data.Addons.getElementsByTagName(ZgaCrypto.addon.tagName.toLowerCase());
+		if(xmlitms.length){
+			/** @type {string} */
+			var rndkey = forge.random.getBytesSync(9);
+			/** @type {Uint8Array} */
+			var u8enc = ZgaCrypto.encryptLocal(str, rndkey);
+			xmlitms[0].setAttribute("secrets", btoa(rndkey + u8enc.toRaw()));
+			RunEvent1("ConfigChanged", "Addons");
+		}
+	}
+};
+
+/**
  * @param {CryptoPwdKey} _pwdkey
  * @return {CryptoSecrets}
  */
 ZgaCrypto.deriveSecrets = function(_pwdkey){
+	/** @const {number} */
+	const _keySize = 256 / 8;
+	/** @const {number} */
+	const _ivSize = 128 / 8;
+
 	if(_pwdkey._default == 1){
-		//TODO load default secrets
-		return {
-			_key: "some key",
-			_iv: "some iv"
-		};
+		/** @type {string} */
+		var dftstr = ZgaCrypto.loadDefaultSecrets();
+		if(dftstr){
+			return {
+				_key: dftstr.substring(0, _keySize),
+				_iv: dftstr.substring(_keySize),
+			};
+		}else{
+			throw new Error("There is no default secrets to load.");
+		}
 	}
 
 	/**
@@ -191,10 +243,6 @@ ZgaCrypto.deriveSecrets = function(_pwdkey){
 	}
 
 	// Derive secrets by password and salt.
-	/** @const {number} */
-	const _keySize = 256 / 8;
-	/** @const {number} */
-	const _ivSize = 128 / 8;
 	if(!salt){
 		/** @type {forge.md.digest} */
 		var md2 = forge.md.sha512.create();
@@ -210,8 +258,8 @@ ZgaCrypto.deriveSecrets = function(_pwdkey){
 	};
 
 	if(_pwdkey._default == 2){
-		//TODO save secrets as default.
-		var TODO = 0;
+		//save secrets as default.
+		ZgaCrypto.saveDefaultSecrets(srtstr);
 	}
 
 	return ret;
@@ -315,7 +363,7 @@ ZgaCrypto.FilesCryptor = function(_fis, _opt){
 	 * @type {string}
 	 * "-" means remove the extension.
 	 */
-	this.outext = _opt._outext || (this.enc ? "enc" : "dec");
+	this.outext = _opt._outext || ZgaCrypto.getAttribute(this.enc ? "encext" : "decext", this.enc ? "enc" : "dec");
 	/** @private @type {Array<FolderItem>} */
 	this.fis = _fis;
 	/** @private @type {ZgaCrypto.BinReader} */
@@ -391,11 +439,11 @@ ZgaCrypto.FilesCryptor.prototype.prepareHdStep = function(){
 		this.cryptor = forge.cipher.createDecipher(ZgaCrypto.ALGORITHMS[this.algo], key2);
 	}
 	this.cryptor.start(opts);
-	this.size = fi.Size;
+	this.pgSize = fi.Size;
 	this.pos = 0;
 	this.stepForward(0);
 
-	return (this.enc ? "Encrypting " : "Decrypting ") + fi.Name;
+	return api.sprintf(100, GetText(this.enc ? "Encrypting %s" : "Decrypting %s"), fi.Name);
 };
 /**
  * @override
@@ -564,11 +612,11 @@ ZgaCrypto.FilesHasher.prototype.prepareHdStep = function(){
 	this.rdr = new ZgaCrypto.BinReader(fi);
 	this.md = forge.md[this.algo].create();
 	this.md.start();
-	this.size = fi.Size;
+	this.pgSize = fi.Size;
 	this.pos = 0;
 	this.stepForward(0);
 
-	return "Calculating hash of " + fi.Name;
+	return api.sprintf(100, GetText("Calculating hash of %s"), fi.Name);
 };
 /**
  * @override
@@ -589,7 +637,7 @@ ZgaCrypto.FilesHasher.prototype.step = function(){
 			var fi = this.fis[this.hdStep];
 			/** @type {string} */
 			var val = this.md.digest().toHex();
-			this.appendResult(this.algo + " hash value of " + fi.Name + " :\n" + val + "\n");
+			this.appendResult(api.sprintf(100, GetText("%s 's %s hash value:"), fi.Name, this.algo) + "\n" + val + "\n");
 			this.dispose();
 		}
 	}
@@ -604,21 +652,24 @@ ZgaCrypto.FilesHasher.prototype.step = function(){
 ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 	/** @type {TablacusControl} */
 	var c = ShowDialog(fso.BuildPath(ZgaCrypto.SRCDIR, "askpwd.html"), {
-		MainWindow: MainWindow,
+		MainWindow: window.MainWindow,
 		Modal: true,
 		width: 500,
 		height: 390,
 	});
 	AddEventEx(c.Window, "load", function(_evt){
 		var doc = /** @type {Document} */(_evt.target);
+		ApplyLang(doc);
 		/** @type {Element} */
 		var sel = doc.getElementById("Algorithm");
+		/** @type {number} */
+		var defalgo = parseInt(ZgaCrypto.getAttribute("algorithm", ZgaCrypto.AESCBC.toString(10)), 10);
 		ZgaCrypto.ALGORITHMS.forEach(function(a_algo, a_idx){
 			/** @type {Element} */
 			var a_opt = doc.createElement("option");
 			a_opt.value = a_idx;
 			a_opt.innerText = a_algo;
-			if(a_idx == ZgaCrypto.AESCBC){
+			if(a_idx == defalgo){
 				a_opt.selected = true;
 			}
 			sel.appendChild(a_opt);
@@ -638,19 +689,16 @@ ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 		 */
 		var changeDefault = function(chkd){
 			if(chkd){
-				doc.getElementById("trAlgo").style.display = "none";
 				doc.getElementById("trPwd").style.display = "none";
 				doc.getElementById("trPwd2").style.display = "none";
 				doc.getElementById("trKeyf").style.display = "none";
 				doc.getElementById("trSave").style.display = "none";
 			}else{
 				if(_hasDefault){
-					doc.getElementById("trDefault").style.display = "";
 					if(_pwdTyp == 2 && _hasKey){
 						doc.getElementById("trSave").style.display = "";
 					}
 				}
-				doc.getElementById("trAlgo").style.display = "";
 				switch(_pwdTyp){
 					case 2:
 						doc.getElementById("trPwd2").style.display = "";
@@ -708,6 +756,121 @@ ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 		AddEventEx(doc.getElementById("chkDefault"), "change", function(evt3){
 			changeDefault(evt3.target.checked);
 		});
+		if(_hasDefault && ZgaCrypto.loadDefaultSecrets(true)){
+			doc.getElementById("trDefault").style.display = "";
+		}
+		doc.getElementById("trAlgo").style.display = "";
 		changeDefault();
 	});
+};
+
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.getSelectedFiles = function(Ctrl, pt){
+	/** @type {FolderView} */
+	var FV = GetFolderView(Ctrl, pt);
+	/** @type {FolderItems} */
+	var Selected = FV.SelectedItems();
+	/** @type {Array<FolderItem>} */
+	var fiarr = new Array();
+	/** @type {number} */
+	var i = 0;
+	while(i<Selected.Count){
+		if(fso.FileExists(Selected.Item(i).Path)){
+			fiarr.push(Selected.Item(i));
+		}
+		i++;
+	}
+	if(fiarr.length == 0){
+		throw new Error("No files selected.");
+	}
+	return fiarr;
+};
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.encryptFiles = function(Ctrl, pt){
+	if(!ZgaCrypto.initCryptoEnv()){
+		return;
+	}
+	/** @type {Array<FolderItem>} */
+	var fiarr = ZgaCrypto.getSelectedFiles(Ctrl, pt);
+	ZgaCrypto.askSecrets(function(_pwdkey, _algo){
+		/** @type {CryptoSecrets} */
+		var fscs = ZgaCrypto.deriveSecrets(_pwdkey);
+		/** @type {ZgaCrypto.FilesCryptor} */
+		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, {
+			_algorithm: _algo,
+			_encrypt: true,
+			_secrets: fscs,
+		});
+		fcptr.open();
+	}, true, 2, true);
+};
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.decryptFiles = function(Ctrl, pt){
+	if(!ZgaCrypto.initCryptoEnv()){
+		return;
+	}
+	/** @type {Array<FolderItem>} */
+	var fiarr = ZgaCrypto.getSelectedFiles(Ctrl, pt);
+	ZgaCrypto.askSecrets(function(_pwdkey, _algo){
+		/** @type {CryptoSecrets} */
+		var fscs = ZgaCrypto.deriveSecrets(_pwdkey);
+		/** @type {ZgaCrypto.FilesCryptor} */
+		var fcptr = new ZgaCrypto.FilesCryptor(fiarr, {
+			_algorithm: _algo,
+			_secrets: fscs,
+		});
+		fcptr.open();
+	}, true, 1, true);
+};
+/**
+ * @param {string} hash
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.hashFiles = function(hash, Ctrl, pt){
+	if(!ZgaCrypto.initCryptoEnv()){
+		return;
+	}
+	/** @type {Array<FolderItem>} */
+	var fiarr = ZgaCrypto.getSelectedFiles(Ctrl, pt);
+	/** @type {ZgaCrypto.FilesHasher} */
+	var fhsr = new ZgaCrypto.FilesHasher(fiarr, hash);
+	fhsr.open();
+};
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.md5Files = function(Ctrl, pt){
+	ZgaCrypto.hashFiles("md5", Ctrl, pt);
+};
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.sha1Files = function(Ctrl, pt){
+	ZgaCrypto.hashFiles("sha1", Ctrl, pt);
+};
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.sha256Files = function(Ctrl, pt){
+	ZgaCrypto.hashFiles("sha256", Ctrl, pt);
+};
+/**
+ * @param {TablacusControl=} Ctrl
+ * @param {Object=} pt
+ */
+ZgaCrypto.sha512Files = function(Ctrl, pt){
+	ZgaCrypto.hashFiles("sha512", Ctrl, pt);
 };

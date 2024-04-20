@@ -1,3 +1,4 @@
+ZgaCrypto.SRCDIR = window.zgacpath || "";
 /**
  * @param {number} _typ
  */
@@ -193,10 +194,12 @@ window.test = function(_typ){
 		if(_typ == 1){
 			/** @type {string} */
 			var ostr = "あいうえお"+String.fromCharCode(0)+String.fromCharCode(1);
-			/** @type {Uint8Array} */
-			var u8enc = ZgaCrypto.encryptLocal(ostr, "abcd");
 			/** @type {string} */
-			var dstr = ZgaCrypto.decryptLocal(u8enc, "abcd");
+			var rndkey = forge.random.getBytesSync(9);
+			/** @type {Uint8Array} */
+			var u8enc = ZgaCrypto.encryptLocal(ostr, rndkey);
+			/** @type {string} */
+			var dstr = ZgaCrypto.decryptLocal(u8enc, rndkey);
 			if(ostr != dstr){
 				throw new Error("Assert failed to encrypt and decrypt for local.");
 			}

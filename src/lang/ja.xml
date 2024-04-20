@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<text s="Encrypt...">暗号化...</text>
+	<text s="Decrypt...">復号化...</text>
+	<text s="Calculate Hash">ハッシュ値の計算</text>
+	<text s="Loading...">準備中。。。</text>
+	<text s="Use my default secrets.">デフォルトの機密情報を使用する。</text>
+	<text s="Please select an algorithm.">アルゴリズム</text>
+	<text s="Note: A .tag file will also be generated. And it is necessary for decryption.">注：.tagファイルも一緒に生成される。そしてそれは復号化に必要。</text>
+	<text s="Please input password.">パスワード</text>
+	<text s="Please input password again.">パスワード再入力</text>
+	<text s="Please specify key files.">キーファイル</text>
+	<text s="Save as my default secrets.">デフォルトの機密情報として保存する。</text>
+	<text s="Calculating hash of %s">%s のハッシュ値を計算中</text>
+	<text s="%s 's %s hash value:">%s の%sハッシュ値は</text>
+	<text s="Encrypting %s">%s 暗号化中</text>
+	<text s="Decrypting %s">%s 復号化中</text>
+</resources>
