@@ -267,8 +267,8 @@ ZgaCrypto.deriveSecrets = function(_pwdkey){
 	return ret;
 };
 
-/** @const {Array<string>} */
-ZgaCrypto.ALGORITHMS = ["AES-ECB","AES-CBC","AES-CFB","AES-OFB","AES-CTR","AES-GCM"];
+/** @type {Array<string>} */
+ZgaCrypto.ALGORITHMS = null;
 /** @const {number} */
 ZgaCrypto.AESCBC = 1;
 /** @const {number} */

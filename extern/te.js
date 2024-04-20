@@ -218,14 +218,21 @@ var importScript = function(path){};
 var MakeCommDlgFilter = function(ft){};
 /**
  * @param {string} fil
+ * @param {string=} charset
  * @return {ADOStream}
  */
-var OpenAdodbFromTextFile = function(fil){};
+var OpenAdodbFromTextFile = function(fil, charset){};
 /**
  * @param {string} evt
  * @param {string} nm
  */
 var RunEvent1 = function(evt, nm){};
+/**
+ * @param {number} idx
+ * @param {string} nm
+ * @param {string} html
+ */
+var SetTabContents = function(idx, nm, html){};
 /**
  * @param {string} fn
  * @param {DialogOptions} opt

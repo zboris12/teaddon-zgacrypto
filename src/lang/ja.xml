@@ -21,4 +21,12 @@
 	<text s="%s 's %s hash value:">%s の%sハッシュ値は</text>
 	<text s="Encrypting %s">%s 暗号化中</text>
 	<text s="Decrypting %s">%s 復号化中</text>
+	<text s="Url to download forge.min.js">forge.min.jsのダウンロードURL</text>
+	<text s="Path of forge.min.js">forge.min.jsの保存場所</text>
+	<text s="Default algorithm">デフォルトのアルゴリズム</text>
+	<text s="Extension added to encrypted file">暗号化ファイルに追加される拡張子</text>
+	<text s="Extension added to decrypted file">復号化ファイルに追加される拡張子</text>
+	<text s="means remove one extension">は１つ拡張子を取り除くこと</text>
+	<text s="You have default secrets saved.">デフォルトの機密情報が保存されている。</text>
+	<text s="Clear my default secrets">デフォルトの機密情報をクリアする</text>
 </resources>

@@ -49,6 +49,12 @@ do
 			then
 				jss="${jss} --js src/$(echo "${fil}" | cut -b2-)"
 			fi
+		elif [ "$c" = "-" ]
+		then
+			if [ "${MODE}" = "check" ]
+			then
+				jss="${jss} --js src/$(echo "${fil}" | cut -b2-)"
+			fi
 		elif [ "$c" != "#" ]
 		then
 			jss="${jss} --js src/${fil}"
@@ -61,6 +67,7 @@ binutil.js
 crypto.js
 !test.js
 +addon.js
+-script.js
 EOF
 msg="$(npx google-closure-compiler ${GCCOPT} ${GCCEXT} ${jss} ${OUTF} 2>&1)"
 RET=$?
@@ -121,6 +128,7 @@ then
 	done <<EOF2
 !askpwd.html
 !progressbar.html
+options.html
 config.xml
 script.js
 lang/ja.xml

@@ -1,4 +1,6 @@
 ZgaCrypto.SRCDIR = window.zgacpath || "";
+ZgaCrypto.ALGORITHMS = ["AES-ECB","AES-CBC","AES-CFB","AES-OFB","AES-CTR","AES-GCM"];
+
 /**
  * @param {number} _typ
  */

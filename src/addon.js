@@ -1,10 +1,12 @@
 /**
  * @param {string} aid
  * @param {AddonElement} item
+ * @param {Array<string>} algos
  */
-function initZgaCrypto(aid, item){
+function initAddon(aid, item, algos){
 	ZgaCrypto.SRCDIR = BuildPath(te.Data.Installed, "addons", aid);
 	ZgaCrypto.addon = item;
+	ZgaCrypto.ALGORITHMS = algos;
 
 	/** @type {string} */
 	var tenc = GetText("Encrypt...");
@@ -62,5 +64,5 @@ Addons.ZgaCrypto = {
 	"encryptFiles": ZgaCrypto.encryptFiles,
 	"decryptFiles": ZgaCrypto.decryptFiles,
 	"hashFiles": ZgaCrypto.hashFiles,
-	"init": initZgaCrypto,
+	"init": initAddon,
 };
