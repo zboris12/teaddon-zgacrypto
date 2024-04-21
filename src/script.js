@@ -59,4 +59,17 @@ if(window.Addon == 1){
 	});
 	html = html.replace("{algorithms}", opts);
 	SetTabContents(0, "General", html);
+
+	/** @type {Element} */
+	var div = document.getElementById("zgaDsrt").nextElementSibling;
+	if(item.getAttribute("secrets")){
+		/** @type {Element} */
+		var btn = div.getElementsByTagName("input")[0];
+		AddEventEx(btn, "click", function(){
+			item.setAttribute("secrets", "");
+			div.style.display = "none";
+		});
+	}else{
+		div.style.display = "none";
+	}
 }

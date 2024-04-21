@@ -141,7 +141,7 @@ window.test = function(_typ){
 
 			msg = "Decrypting " + fim.Name;
 		}
-		this.size = fim.Size;
+		this.pgSize = fim.Size;
 		this.pos = 0;
 		this.stepForward(0);
 		return msg;

@@ -180,6 +180,12 @@ var AddEvent = function(nm, fn){};
  */
 var AddEventEx = function(w, nm, fn){};
 /**
+ * @param {string} typ
+ * @param {string} nm
+ * @param {Function} fn
+ */
+var AddTypeEx = function(typ, nm, fn){};
+/**
  * @param {Document} doc
  */
 var ApplyLang = function(doc){};

@@ -66,3 +66,10 @@ Addons.ZgaCrypto = {
 	"hashFiles": ZgaCrypto.hashFiles,
 	"init": initAddon,
 };
+
+AddTypeEx("Add-ons", "ZgaCrypto_encryptFiles", ZgaCrypto.encryptFiles);
+AddTypeEx("Add-ons", "ZgaCrypto_decryptFiles", ZgaCrypto.decryptFiles);
+AddTypeEx("Add-ons", "ZgaCrypto_md5Files", ZgaCrypto.md5Files);
+AddTypeEx("Add-ons", "ZgaCrypto_sha1Files", ZgaCrypto.sha1Files);
+AddTypeEx("Add-ons", "ZgaCrypto_sha256Files", ZgaCrypto.sha256Files);
+AddTypeEx("Add-ons", "ZgaCrypto_sha512Files", ZgaCrypto.sha512Files);
