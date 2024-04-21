@@ -44,7 +44,7 @@ Just right click the files, and select the operation from context menu.
 
 1. Add action to tool bar and specify `Type` to `Add-ons`.
 2. And choose add-ons of zgacrypto from list.  
-![toolbar](screenshot-toolbar "toolbar")
+![toolbar](screenshot-toolbar.png "toolbar")
 
 ## License
 
