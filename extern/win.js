@@ -62,6 +62,15 @@ FileSystemObject.prototype.GetFile = function(path){};
  */
 FileSystemObject.prototype.GetParentFolderName = function(path){};
 /**
+ * @param {number} folderspec // 0: WindowsFolder, 1: SystemFolder, 2: TemporaryFolder
+ * @return {FolderItem}
+ */
+FileSystemObject.prototype.GetSpecialFolder = function(folderspec){};
+/**
+ * @return {string}
+ */
+FileSystemObject.prototype.GetTempName = function(){};
+/**
  * @param {string} filename
  * @param {number=} iomode // 1: ForReading, 2: ForWriting, 8: ForAppending
  * @param {boolean=} create

@@ -262,3 +262,20 @@ ZgaCrypto.BinWriter.prototype.writeLastByte = function(){
 	api.WriteFile(this._hdl, om);
 	om.Free(true);
 };
+
+/**
+ * @param {string|Uint8Array} _dat
+ * @return {string} path of temporary file
+ */
+ZgaCrypto.writeTempFile = function(_dat){
+	/** @type {string} */
+	var tmpath = fso.BuildPath(fso.GetSpecialFolder(2).Path, fso.GetTempName());
+	/** @type {ZgaCrypto.BinWriter} */
+	var wtr = new ZgaCrypto.BinWriter(tmpath);
+	if(typeof _dat == "string"){
+		_dat = Uint8Array.fromRaw(_dat);
+	}
+	wtr.write(_dat);
+	wtr.close();
+	return tmpath;
+};

@@ -146,7 +146,7 @@ ZgaCrypto.saveDefaultSecrets = function(str){
 };
 
 /**
- * @param {CryptoPwdKey} _pwdkey
+ * @param {CryptoPwdKey|string} _pwdkey
  * @return {CryptoSecrets}
  */
 ZgaCrypto.deriveSecrets = function(_pwdkey){
@@ -154,6 +154,12 @@ ZgaCrypto.deriveSecrets = function(_pwdkey){
 	const _keySize = 256 / 8;
 	/** @const {number} */
 	const _ivSize = 128 / 8;
+
+	if(typeof _pwdkey == "string"){
+		_pwdkey = {
+			_pwd: _pwdkey,
+		};
+	}
 
 	if(_pwdkey._default == 1){
 		/** @type {string} */
@@ -335,6 +341,24 @@ ZgaCrypto.cryptString = function(_encflg, _in, _pwd, _algo){
 		ret = forge.util.decodeUtf8(ret);
 	}
 	return ret;
+};
+/**
+ * @param {string} _in // an utf8 string
+ * @param {string|CryptoSecrets} _pwd
+ * @param {number=} _algo
+ * @return {string} // a base64 encoded string
+ */
+ZgaCrypto.aesEncString = function(_in, _pwd, _algo){
+	return btoa(ZgaCrypto.cryptString(true, _in, _pwd, _algo));
+};
+/**
+ * @param {string} _in // a base64 encoded string
+ * @param {string|CryptoSecrets} _pwd
+ * @param {number=} _algo
+ * @return {string} // an utf8 string
+ */
+ZgaCrypto.aesDecString = function(_in, _pwd, _algo){
+	return ZgaCrypto.cryptString(false, atob(_in), _pwd, _algo);
 };
 
 /**
