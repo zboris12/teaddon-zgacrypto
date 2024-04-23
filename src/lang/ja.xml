@@ -7,6 +7,7 @@
 	<text s="Please download it by yourself and save it to">手動でダウンロードしてここに保存してください。</text>
 	<text s="Failed to load %s.">%sの読込は失敗しました。</text>
 	<text s="Please make sure it has been saved to">ここに置いていることをご確認ください。</text>
+	<text s="No files selected.">ファイルが選択されていません。</text>
 	<text s="Loading...">準備中。。。</text>
 	<text s="Done">完了</text>
 	<text s="Close">閉じる</text>

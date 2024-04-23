@@ -287,10 +287,7 @@ ZgaCrypto.AESGCM = 5;
  * @param {number=} _algo
  * @return {string}
  */
-ZgaCrypto.cryptString = function(_encflg, _in, _pwd, _algo){
-	if(_encflg){
-		_in = forge.util.encodeUtf8(_in);
-	}
+ZgaCrypto.cryptData = function(_encflg, _in, _pwd, _algo){
 	/** @type {number} */
 	var algo = _algo >= 0 ? _algo : ZgaCrypto.AESCBC;
 	/** @type {CryptoSecrets|null} */
@@ -337,28 +334,26 @@ ZgaCrypto.cryptString = function(_encflg, _in, _pwd, _algo){
 			var tag = tr.mode.tag.getBytes();
 			ret = String.fromCharCode(tag.length) + tag + ret;
 		}
-	}else{
-		ret = forge.util.decodeUtf8(ret);
 	}
 	return ret;
 };
 /**
- * @param {string} _in // an utf8 string
+ * @param {string} _in // an standard JavaScript string
  * @param {string|CryptoSecrets} _pwd
  * @param {number=} _algo
  * @return {string} // a base64 encoded string
  */
 ZgaCrypto.aesEncString = function(_in, _pwd, _algo){
-	return btoa(ZgaCrypto.cryptString(true, _in, _pwd, _algo));
+	return btoa(ZgaCrypto.cryptData(true, forge.util.encodeUtf8(_in), _pwd, _algo));
 };
 /**
  * @param {string} _in // a base64 encoded string
  * @param {string|CryptoSecrets} _pwd
  * @param {number=} _algo
- * @return {string} // an utf8 string
+ * @return {string} // an standard JavaScript string
  */
 ZgaCrypto.aesDecString = function(_in, _pwd, _algo){
-	return ZgaCrypto.cryptString(false, atob(_in), _pwd, _algo);
+	return forge.util.decodeUtf8(ZgaCrypto.cryptData(false, atob(_in), _pwd, _algo));
 };
 
 /**
@@ -793,6 +788,7 @@ ZgaCrypto.askSecrets = function(_func, _hasDefault, _pwdTyp, _hasKey){
 /**
  * @param {TablacusControl=} Ctrl
  * @param {Object=} pt
+ * @return {Array<FolderItem>}
  */
 ZgaCrypto.getSelectedFiles = function(Ctrl, pt){
 	/** @type {FolderView} */
@@ -810,9 +806,11 @@ ZgaCrypto.getSelectedFiles = function(Ctrl, pt){
 		i++;
 	}
 	if(fiarr.length == 0){
-		throw new Error("No files selected.");
+		alert(GetText("No files selected."));
+		return null;
+	}else{
+		return fiarr;
 	}
-	return fiarr;
 };
 /**
  * @param {TablacusControl=} Ctrl
@@ -824,6 +822,10 @@ ZgaCrypto.encryptFiles = function(Ctrl, pt){
 	}
 	/** @type {Array<FolderItem>} */
 	var fiarr = ZgaCrypto.getSelectedFiles(Ctrl, pt);
+	if(!fiarr){
+		return;
+	}
+
 	ZgaCrypto.askSecrets(function(_pwdkey, _algo){
 		/** @type {CryptoSecrets} */
 		var fscs = ZgaCrypto.deriveSecrets(_pwdkey);
@@ -846,6 +848,9 @@ ZgaCrypto.decryptFiles = function(Ctrl, pt){
 	}
 	/** @type {Array<FolderItem>} */
 	var fiarr = ZgaCrypto.getSelectedFiles(Ctrl, pt);
+	if(!fiarr){
+		return;
+	}
 	ZgaCrypto.askSecrets(function(_pwdkey, _algo){
 		/** @type {CryptoSecrets} */
 		var fscs = ZgaCrypto.deriveSecrets(_pwdkey);
@@ -868,6 +873,9 @@ ZgaCrypto.hashFiles = function(hash, Ctrl, pt){
 	}
 	/** @type {Array<FolderItem>} */
 	var fiarr = ZgaCrypto.getSelectedFiles(Ctrl, pt);
+	if(!fiarr){
+		return;
+	}
 	/** @type {ZgaCrypto.FilesHasher} */
 	var fhsr = new ZgaCrypto.FilesHasher(fiarr, hash);
 	fhsr.open();

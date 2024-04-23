@@ -58,7 +58,7 @@ Addons.ZgaCrypto = {
 	"encryptLocal": ZgaCrypto.encryptLocal,
 	"decryptLocal": ZgaCrypto.decryptLocal,
 	"deriveSecrets": ZgaCrypto.deriveSecrets,
-	"cryptString": ZgaCrypto.cryptString,
+	"cryptData": ZgaCrypto.cryptData,
 	"aesEncString": ZgaCrypto.aesEncString,
 	"aesDecString": ZgaCrypto.aesDecString,
 	"FilesCryptor": ZgaCrypto.FilesCryptor,
