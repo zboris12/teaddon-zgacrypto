@@ -506,13 +506,17 @@ ZgaCrypto.FilesCryptor.prototype.getOutPath = function(_in){
 			/** @type {string} */
 			var bb = fso.GetBaseName(b);
 			fb = fso.BuildPath(p, bb);
-			if(b != bb){
+			if(b == bb){
+				ext = "";
+			}else{
 				ext = fso.GetExtensionName(b);
 			}
 		}
 	}
 
-	ext = "." + ext;
+	if(ext){
+		ext = "." + ext;
+	}
 	/** @type {number} */
 	var i = 0;
 	/** @type {string} */
